@@ -2,7 +2,8 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>블로그 체험단 일정 등록</title>
+  <title>일상을 여행처럼 일정 등록</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -12,9 +13,21 @@
       margin: auto;
     }
 
-    h1 {
-      text-align: center;
+    .header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
       margin-bottom: 30px;
+    }
+
+    .header img {
+      height: 40px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 1.6em;
     }
 
     .form-group {
@@ -44,14 +57,16 @@
     .days-container {
       display: flex;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
       padding: 0 10px;
     }
 
     .day-label {
       display: flex;
-      flex-direction: column;
       align-items: center;
       font-size: 13px;
+      gap: 4px;
     }
 
     button {
@@ -95,7 +110,10 @@
   </style>
 </head>
 <body>
-  <h1>일상을 여행처럼 일정 등록</h1>
+  <div class="header">
+    <img src="logo.jpg" alt="로고">
+    <h1>일상을 여행처럼 일정 등록</h1>
+  </div>
 
   <div class="form-group">
     <label for="title">업체명</label>
@@ -119,13 +137,13 @@
   <div class="form-group">
     <label>가능요일</label>
     <div class="days-container">
-      <div class="day-label"><label><input type="checkbox" id="mon" checked /><br />월</label></div>
-      <div class="day-label"><label><input type="checkbox" id="tue" checked /><br />화</label></div>
-      <div class="day-label"><label><input type="checkbox" id="wed" checked /><br />수</label></div>
-      <div class="day-label"><label><input type="checkbox" id="thu" checked /><br />목</label></div>
-      <div class="day-label"><label><input type="checkbox" id="fri" checked /><br />금</label></div>
-      <div class="day-label"><label><input type="checkbox" id="sat" checked /><br />토</label></div>
-      <div class="day-label"><label><input type="checkbox" id="sun" checked /><br />일</label></div>
+      <label class="day-label"><input type="checkbox" id="mon" checked />월</label>
+      <label class="day-label"><input type="checkbox" id="tue" checked />화</label>
+      <label class="day-label"><input type="checkbox" id="wed" checked />수</label>
+      <label class="day-label"><input type="checkbox" id="thu" checked />목</label>
+      <label class="day-label"><input type="checkbox" id="fri" checked />금</label>
+      <label class="day-label"><input type="checkbox" id="sat" checked />토</label>
+      <label class="day-label"><input type="checkbox" id="sun" checked />일</label>
     </div>
   </div>
 

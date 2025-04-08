@@ -1,17 +1,24 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <title>체험단 일정 목록</title>
+  <meta charset="UTF-8">
+  <title>일상을 여행처럼 일정 목록</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { font-family: 'Segoe UI', sans-serif; padding: 30px; max-width: 1000px; margin: auto; }
-    h1 { text-align: center; }
+    .header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; }
+    .header img { height: 40px; }
+    .header h1 { margin: 0; font-size: 1.6em; }
+    .top-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
+    .button-group { display: flex; gap: 10px; align-items: center; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 14px; }
     th { background-color: #f4f4f4; }
-    button { padding: 4px 8px; margin: 0 2px; cursor: pointer; }
-    select { padding: 5px; margin-left: 10px; }
+    button { padding: 6px 12px; cursor: pointer; border: none; border-radius: 4px; background-color: #1d72b8; color: white; }
+    button:hover { background-color: #135a96; }
+    select, input[type="checkbox"] { padding: 6px; }
+    label { margin-right: 8px; }
     .tooltip {
       white-space: nowrap;
       overflow: hidden;
@@ -26,14 +33,26 @@
   </style>
 </head>
 <body>
-  <h1>체험단 일정 목록</h1>
+  <div class="header">
+    <img src="logo.jpg" alt="로고">
+    <h1>일상을 여행처럼 일정 목록</h1>
+  </div>
 
-  <label for="sort">정렬 기준:</label>
-  <select id="sort">
-    <option value="date_s">시작 날짜</option>
-    <option value="date_e">종료 날짜</option>
-    <option value="created_at">입력 날짜</option>
-  </select>
+  <div class="top-bar">
+    <div>
+      <label for="sort">정렬 기준:</label>
+      <select id="sort">
+        <option value="date_s">시작 날짜</option>
+        <option value="date_e">종료 날짜</option>
+        <option value="created_at">입력 날짜</option>
+      </select>
+    </div>
+    <div class="button-group">
+      <label><input type="checkbox" id="showDone" checked /> 완료 포함</label>
+      <button onclick="location.href='index.html'">➕ 등록하기</button>
+      <button onclick="location.href='cal.html'">📅 달력 보기</button>
+    </div>
+  </div>
 
   <table id="schedule-table">
     <thead>
@@ -64,10 +83,10 @@
     const dayKor = { mon:'월', tue:'화', wed:'수', thu:'목', fri:'금', sat:'토', sun:'일' };
 
     async function loadSchedules(sortBy = 'date_s') {
-      const { data, error } = await supabase
-        .from('sche')
-        .select('*')
-        .order(sortBy, { ascending: true });
+      const showDone = document.getElementById('showDone').checked;
+      let query = supabase.from('sche').select('*').order(sortBy, { ascending: true });
+      if (!showDone) query = query.eq('done', false);
+      const { data, error } = await query;
 
       if (error) return alert('데이터 불러오기 실패');
 
@@ -110,6 +129,7 @@
     }
 
     document.getElementById('sort').addEventListener('change', e => loadSchedules(e.target.value));
+    document.getElementById('showDone').addEventListener('change', () => loadSchedules(document.getElementById('sort').value));
     loadSchedules();
   </script>
 </body>

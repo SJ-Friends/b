@@ -2,11 +2,14 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>일정 수정</title>
+  <title>일상을 여행처럼 일정 수정</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { font-family: 'Segoe UI', sans-serif; background: #f9f9f9; padding: 40px; max-width: 600px; margin: auto; }
-    h1 { text-align: center; margin-bottom: 30px; }
+    .header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 30px; }
+    .header img { height: 40px; }
+    .header h1 { margin: 0; font-size: 1.5em; }
     .form-group { display: flex; flex-direction: column; margin-bottom: 20px; }
     label { font-weight: bold; margin-bottom: 5px; }
     input[type="text"], input[type="date"], textarea {
@@ -14,20 +17,23 @@
     }
     textarea { resize: vertical; }
     .days-container {
-      display: flex; justify-content: space-between; padding: 0 10px;
+      display: flex; flex-wrap: wrap; gap: 10px;
     }
     .day-label {
-      display: flex; flex-direction: column; align-items: center; font-size: 13px;
+      display: flex; align-items: center; gap: 4px; font-size: 13px;
     }
     button {
       padding: 12px 20px; background-color: #1d72b8; color: white; border: none;
-      border-radius: 6px; cursor: pointer; font-size: 15px; width: 100%;
+      border-radius: 6px; cursor: pointer; font-size: 15px; width: 100%; margin-bottom: 10px;
     }
     button:hover { background-color: #135a96; }
   </style>
 </head>
 <body>
-  <h1>일정 수정</h1>
+  <div class="header">
+    <img src="logo.jpg" alt="로고">
+    <h1>일상을 여행처럼 일정 수정</h1>
+  </div>
 
   <div class="form-group">
     <label for="title">업체명</label>
@@ -49,13 +55,13 @@
   <div class="form-group">
     <label>가능요일</label>
     <div class="days-container">
-      <div class="day-label"><label><input type="checkbox" id="mon" /> 월</label></div>
-      <div class="day-label"><label><input type="checkbox" id="tue" /> 화</label></div>
-      <div class="day-label"><label><input type="checkbox" id="wed" /> 수</label></div>
-      <div class="day-label"><label><input type="checkbox" id="thu" /> 목</label></div>
-      <div class="day-label"><label><input type="checkbox" id="fri" /> 금</label></div>
-      <div class="day-label"><label><input type="checkbox" id="sat" /> 토</label></div>
-      <div class="day-label"><label><input type="checkbox" id="sun" /> 일</label></div>
+      <label class="day-label"><input type="checkbox" id="mon" /> 월</label>
+      <label class="day-label"><input type="checkbox" id="tue" /> 화</label>
+      <label class="day-label"><input type="checkbox" id="wed" /> 수</label>
+      <label class="day-label"><input type="checkbox" id="thu" /> 목</label>
+      <label class="day-label"><input type="checkbox" id="fri" /> 금</label>
+      <label class="day-label"><input type="checkbox" id="sat" /> 토</label>
+      <label class="day-label"><input type="checkbox" id="sun" /> 일</label>
     </div>
   </div>
 
@@ -70,6 +76,7 @@
   </div>
 
   <button onclick="updateSchedule()">✔️ 수정 완료</button>
+  <button onclick="location.href='list.html'">📋 목록 보기</button>
 
   <script>
     const supabase = window.supabase.createClient(
