@@ -46,18 +46,14 @@
     }
 
     .days-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      text-align: center;
     }
 
     .day-label {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       font-size: 13px;
-      flex: 1 1 20%;
     }
 
     button {
@@ -125,13 +121,13 @@
   <div class="form-group">
     <label>가능요일</label>
     <div class="days-container">
-      <div class="day-label"><label><input type="checkbox" id="mon" checked /><br />월</label></div>
-      <div class="day-label"><label><input type="checkbox" id="tue" checked /><br />화</label></div>
-      <div class="day-label"><label><input type="checkbox" id="wed" checked /><br />수</label></div>
-      <div class="day-label"><label><input type="checkbox" id="thu" checked /><br />목</label></div>
-      <div class="day-label"><label><input type="checkbox" id="fri" checked /><br />금</label></div>
-      <div class="day-label"><label><input type="checkbox" id="sat" checked /><br />토</label></div>
-      <div class="day-label"><label><input type="checkbox" id="sun" checked /><br />일</label></div>
+      <label class="day-label"><input type="checkbox" id="mon" checked /> 월</label>
+      <label class="day-label"><input type="checkbox" id="tue" checked /> 화</label>
+      <label class="day-label"><input type="checkbox" id="wed" checked /> 수</label>
+      <label class="day-label"><input type="checkbox" id="thu" checked /> 목</label>
+      <label class="day-label"><input type="checkbox" id="fri" checked /> 금</label>
+      <label class="day-label"><input type="checkbox" id="sat" checked /> 토</label>
+      <label class="day-label"><input type="checkbox" id="sun" checked /> 일</label>
     </div>
   </div>
 
