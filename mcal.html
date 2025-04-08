@@ -12,8 +12,10 @@
     .header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
     .header img { height: 40px; }
     .header h1 { margin: 0; font-size: 1.5em; }
-    #calendar { max-width: 100%; margin: 20px auto; }
-    .controls { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+    .month-title { text-align: center; font-size: 1.1em; margin: 5px 0 10px; color: #333; }
+    .fc-header-toolbar { font-size: 0.85em !important; margin-bottom: 5px !important; }
+    #calendar { max-width: 100%; margin: 10px auto; }
+    .controls { display: flex; justify-content: flex-start; align-items: center; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
     .controls label { display: flex; align-items: center; gap: 5px; }
     button {
       padding: 8px 16px;
@@ -40,14 +42,16 @@
     <h1>일상을 여행처럼 캘린더 보기</h1>
   </div>
 
+  <div class="month-title">2025년 4월</div>
+
+  <div id='calendar'></div>
+
   <div class="controls">
     <label><input type="checkbox" id="showDone" checked /> 완료 일정 포함</label>
   </div>
 
-  <div id='calendar'></div>
-
   <div style="text-align: center; margin-top: 20px;">
-    <button onclick="location.href='list.html'">📋 목록 보기</button>
+    <button onclick="location.href='mlist.html'">📋 목록 보기</button>
   </div>
 
   <script>
@@ -73,7 +77,7 @@
         },
         events: await loadEvents(),
         eventClick: function(info) {
-          const url = `edit.html?id=${info.event.extendedProps.id}`;
+          const url = `medit.html?id=${info.event.extendedProps.id}`;
           if (confirm('이 일정을 수정하시겠습니까?')) {
             window.location.href = url;
           }
