@@ -49,8 +49,8 @@
     </div>
     <div class="button-group">
       <label><input type="checkbox" id="showDone" checked /> 완료 포함</label>
-      <button onclick="location.href='index.html'">➕ 등록하기</button>
-      <button onclick="location.href='cal.html'">📅 달력 보기</button>
+      <button onclick="location.href='mindex.html'">➕ 등록하기</button>
+      <button onclick="location.href='mcal.html'">📅 달력 보기</button>
     </div>
   </div>
 
@@ -109,7 +109,7 @@
           <td>${item.date_e || ''}</td>
           <td>${unavailable}</td>
           <td class="tooltip" title="${item.memo || ''}">💬</td>
-          <td><button onclick="location.href='edit.html?id=${item.id}'">수정</button></td>
+          <td><button onclick="location.href='medit.html?id=${item.id}'">수정</button></td>
           <td><button onclick="deleteSchedule(${item.id})">삭제</button></td>
         `;
 
