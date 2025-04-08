@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>블로그 체험단 일정 등록</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f9f9f9;
+      padding: 40px;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    textarea {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    .days-container {
+      display: flex;
+      justify-content: space-between;
+      padding: 0 10px;
+    }
+
+    .day-label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    button {
+      padding: 12px 20px;
+      background-color: #1d72b8;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    button:hover {
+      background-color: #135a96;
+    }
+
+    .message {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 5px;
+      display: none;
+    }
+
+    .success {
+      background-color: #e0ffe0;
+      color: #006600;
+    }
+
+    .error {
+      background-color: #ffe0e0;
+      color: #990000;
+    }
+
+    .output {
+      margin-top: 15px;
+      white-space: pre-wrap;
+      font-size: 0.95em;
+    }
+  </style>
+</head>
+<body>
+  <h1>일상을 여행처럼 일정 등록</h1>
+
+  <div class="form-group">
+    <label for="title">업체명</label>
+    <input type="text" id="title" />
+  </div>
+
+  <div class="form-group">
+    <label for="loca">위치</label>
+    <input type="text" id="loca" />
+  </div>
+
+  <div class="form-group">
+    <label>기간</label>
+    <div style="display: flex; gap: 10px;">
+      <input type="date" id="date_s" />
+      <span style="line-height: 2.5;">~</span>
+      <input type="date" id="date_e" />
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>가능요일</label>
+    <div class="days-container">
+      <div class="day-label"><label><input type="checkbox" id="mon" checked /><br />월</label></div>
+      <div class="day-label"><label><input type="checkbox" id="tue" checked /><br />화</label></div>
+      <div class="day-label"><label><input type="checkbox" id="wed" checked /><br />수</label></div>
+      <div class="day-label"><label><input type="checkbox" id="thu" checked /><br />목</label></div>
+      <div class="day-label"><label><input type="checkbox" id="fri" checked /><br />금</label></div>
+      <div class="day-label"><label><input type="checkbox" id="sat" checked /><br />토</label></div>
+      <div class="day-label"><label><input type="checkbox" id="sun" checked /><br />일</label></div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="cost">지원금액</label>
+    <input type="text" id="cost" />
+  </div>
+
+  <div class="form-group">
+    <label for="memo">Memo</label>
+    <textarea id="memo" rows="3"></textarea>
+  </div>
+
+  <button id="submitBtn">➕ 등록하기</button>
+  <button onclick="location.href='list.html'">📋 목록 보기</button>
+
+  <div id="message" class="message"></div>
+  <div id="output" class="output"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const supabase = window.supabase.createClient(
+        'https://xxmtxuhcdzidhrefrvwf.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4bXR4dWhjZHppZGhyZWZydndmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODAyNTQsImV4cCI6MjA1OTY1NjI1NH0.TaCCDlJvKrif_pZY038Qkglip8h-Qqjp2w2GlKwvoVg'
+      );
+
+      async function submitForm() {
+        const title = document.getElementById('title').value.trim();
+        const loca = document.getElementById('loca').value.trim();
+        const date_s = document.getElementById('date_s').value;
+        const date_e = document.getElementById('date_e').value;
+        const cost = document.getElementById('cost').value.trim();
+        const memo = document.getElementById('memo').value.trim();
+        const messageBox = document.getElementById('message');
+        const outputBox = document.getElementById('output');
+
+        const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+        const dayValues = {};
+        days.forEach(day => {
+          dayValues[day] = document.getElementById(day).checked ? 'Y' : null;
+        });
+
+        messageBox.style.display = 'none';
+        outputBox.textContent = '';
+
+        if (!title || !loca || !date_s || !date_e) {
+          showMessage("필수 항목을 입력해주세요.", false);
+          return;
+        }
+
+        const { error } = await supabase.from('sche').insert([{
+          title, loca, date_s, date_e, cost, memo, ...dayValues
+        }]);
+
+        if (error) {
+          console.error(error);
+          showMessage("등록 실패: 콘솔 확인", false);
+        } else {
+          showMessage("등록 완료!", true);
+          outputBox.textContent =
+            `✔️ ${title} 일정이 등록되었습니다.\n위치: ${loca}\n기간: ${date_s} ~ ${date_e}\n요일: ${days.filter(d => dayValues[d] === 'Y').join(', ')}\n지원금액: ${cost}\n메모: ${memo}`;
+          document.querySelectorAll('input[type="text"], textarea, input[type="date"]').forEach(el => el.value = '');
+          days.forEach(day => document.getElementById(day).checked = true);
+        }
+      }
+
+      function showMessage(msg, success) {
+        const messageBox = document.getElementById('message');
+        messageBox.textContent = msg;
+        messageBox.className = `message ${success ? 'success' : 'error'}`;
+        messageBox.style.display = 'block';
+      }
+
+      document.getElementById('submitBtn').addEventListener('click', submitForm);
+    });
+  </script>
+</body>
+</html>

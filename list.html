@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>체험단 일정 목록</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; padding: 30px; max-width: 1000px; margin: auto; }
+    h1 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 14px; }
+    th { background-color: #f4f4f4; }
+    button { padding: 4px 8px; margin: 0 2px; cursor: pointer; }
+    select { padding: 5px; margin-left: 10px; }
+    .tooltip {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 150px;
+    }
+    .link-button {
+      color: #0077cc;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>체험단 일정 목록</h1>
+
+  <label for="sort">정렬 기준:</label>
+  <select id="sort">
+    <option value="date_s">시작 날짜</option>
+    <option value="date_e">종료 날짜</option>
+    <option value="created_at">입력 날짜</option>
+  </select>
+
+  <table id="schedule-table">
+    <thead>
+      <tr>
+        <th>완료</th>
+        <th>#</th>
+        <th>업체명</th>
+        <th>비용</th>
+        <th>위치</th>
+        <th>시작일</th>
+        <th>종료일</th>
+        <th>불가능 요일</th>
+        <th>메모</th>
+        <th>수정</th>
+        <th>삭제</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const supabase = window.supabase.createClient(
+      'https://xxmtxuhcdzidhrefrvwf.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4bXR4dWhjZHppZGhyZWZydndmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODAyNTQsImV4cCI6MjA1OTY1NjI1NH0.TaCCDlJvKrif_pZY038Qkglip8h-Qqjp2w2GlKwvoVg'
+    );
+
+    const dayNames = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+    const dayKor = { mon:'월', tue:'화', wed:'수', thu:'목', fri:'금', sat:'토', sun:'일' };
+
+    async function loadSchedules(sortBy = 'date_s') {
+      const { data, error } = await supabase
+        .from('sche')
+        .select('*')
+        .order(sortBy, { ascending: true });
+
+      if (error) return alert('데이터 불러오기 실패');
+
+      const tbody = document.querySelector('#schedule-table tbody');
+      tbody.innerHTML = '';
+      data.forEach((item, index) => {
+        const tr = document.createElement('tr');
+
+        const unavailable = dayNames.filter(day => item[day] !== 'Y').map(day => dayKor[day]).join(', ');
+        const mapQuery = encodeURIComponent(`${item.title} ${item.loca}`);
+        const mapLink = `https://map.naver.com/v5/search/${mapQuery}`;
+
+        tr.innerHTML = `
+          <td><input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleDone(${item.id}, this.checked)"></td>
+          <td>${index + 1}</td>
+          <td>${item.title}</td>
+          <td>${item.cost}</td>
+          <td><span class="link-button" onclick="window.open('${mapLink}', '_blank')">${item.loca}</span></td>
+          <td>${item.date_s || ''}</td>
+          <td>${item.date_e || ''}</td>
+          <td>${unavailable}</td>
+          <td class="tooltip" title="${item.memo || ''}">💬</td>
+          <td><button onclick="location.href='edit.html?id=${item.id}'">수정</button></td>
+          <td><button onclick="deleteSchedule(${item.id})">삭제</button></td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function deleteSchedule(id) {
+      if (!confirm('정말 삭제하시겠습니까?')) return;
+      const { error } = await supabase.from('sche').delete().eq('id', id);
+      if (error) return alert('삭제 실패');
+      loadSchedules(document.getElementById('sort').value);
+    }
+
+    async function toggleDone(id, checked) {
+      await supabase.from('sche').update({ done: checked }).eq('id', id);
+    }
+
+    document.getElementById('sort').addEventListener('change', e => loadSchedules(e.target.value));
+    loadSchedules();
+  </script>
+</body>
+</html>
