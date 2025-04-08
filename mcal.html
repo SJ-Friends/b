@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>일상을 여행처럼 캘린더 보기</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; padding: 20px; max-width: 1000px; margin: auto; }
+    .header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
+    .header img { height: 40px; }
+    .header h1 { margin: 0; font-size: 1.5em; }
+    #calendar { max-width: 100%; margin: 20px auto; }
+    .controls { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+    .controls label { display: flex; align-items: center; gap: 5px; }
+    button {
+      padding: 8px 16px;
+      background-color: #1d72b8;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover { background-color: #135a96; }
+    .fc-day-sat { background-color: #eef6ff; }
+    .fc-day-sun { background-color: #fff0f0; }
+    .fc-day-fri { background-color: #f9f9f9; }
+    .fc-col-header-cell-cushion { font-weight: bold; }
+    .fc-daygrid-day-number::after { content: ''; }
+    .fc-list-day-cushion { font-weight: bold; }
+    .fc-list-event-time { display: none; }
+    .fc-list-event-title::before { content: attr(data-date) ' - '; font-weight: bold; color: #444; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="logo.jpg" alt="로고">
+    <h1>일상을 여행처럼 캘린더 보기</h1>
+  </div>
+
+  <div class="controls">
+    <label><input type="checkbox" id="showDone" checked /> 완료 일정 포함</label>
+  </div>
+
+  <div id='calendar'></div>
+
+  <div style="text-align: center; margin-top: 20px;">
+    <button onclick="location.href='list.html'">📋 목록 보기</button>
+  </div>
+
+  <script>
+    const supabase = window.supabase.createClient(
+      'https://xxmtxuhcdzidhrefrvwf.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4bXR4dWhjZHppZGhyZWZydndmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODAyNTQsImV4cCI6MjA1OTY1NjI1NH0.TaCCDlJvKrif_pZY038Qkglip8h-Qqjp2w2GlKwvoVg'
+    );
+
+    let calendar;
+
+    document.addEventListener('DOMContentLoaded', async function () {
+      calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+        initialView: 'dayGridMonth',
+        locale: 'ko',
+        height: 'auto',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,listWeek'
+        },
+        dayHeaderContent: function(args) {
+          return args.text.replace('요일', '');
+        },
+        events: await loadEvents(),
+        eventClick: function(info) {
+          const url = `edit.html?id=${info.event.extendedProps.id}`;
+          if (confirm('이 일정을 수정하시겠습니까?')) {
+            window.location.href = url;
+          }
+        },
+        eventDidMount: function(info) {
+          info.el.title = info.event.extendedProps.memo || '';
+
+          if (info.view.type.startsWith('list')) {
+            const date = new Date(info.event.start);
+            const formatted = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+            info.el.querySelector('.fc-list-event-title').setAttribute('data-date', formatted);
+          }
+        }
+      });
+      calendar.render();
+
+      document.getElementById('showDone').addEventListener('change', async () => {
+        const events = await loadEvents();
+        calendar.removeAllEvents();
+        calendar.addEventSource(events);
+      });
+    });
+
+    async function loadEvents() {
+      const showDone = document.getElementById('showDone').checked;
+      let query = supabase.from('sche').select('*');
+      if (!showDone) query = query.eq('done', false);
+      const { data, error } = await query;
+      if (error) {
+        alert('일정 불러오기 실패');
+        return [];
+      }
+      return data.map(item => ({
+        id: item.id,
+        title: `${item.title} (${item.cost || '비용없음'})`,
+        start: item.date_s,
+        end: item.date_e ? new Date(new Date(item.date_e).getTime() + 86400000).toISOString().split('T')[0] : item.date_s,
+        extendedProps: {
+          memo: item.memo,
+          loca: item.loca,
+          cost: item.cost,
+          id: item.id
+        },
+        backgroundColor: item.done ? '#ccc' : '#1d72b8',
+        borderColor: item.done ? '#aaa' : '#1d72b8'
+      }));
+    }
+  </script>
+</body>
+</html>

@@ -2,21 +2,32 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
+  <title>일상을 여행처럼 일정 등록</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>블로그 체험단 일정 등록</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #f9f9f9;
-      padding: 20px;
+      padding: 40px;
       max-width: 600px;
       margin: auto;
     }
 
-    h1 {
-      text-align: center;
+    .header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
       margin-bottom: 30px;
-      font-size: 20px;
+    }
+
+    .header img {
+      height: 40px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 1.6em;
     }
 
     .form-group {
@@ -37,8 +48,6 @@
       border: 1px solid #ccc;
       border-radius: 6px;
       font-size: 14px;
-      width: 100%;
-      box-sizing: border-box;
     }
 
     textarea {
@@ -46,18 +55,22 @@
     }
 
     .days-container {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 8px;
-      text-align: center;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 0 10px;
     }
 
     .day-label {
+      display: flex;
+      align-items: center;
       font-size: 13px;
+      gap: 4px;
     }
 
     button {
-      padding: 12px;
+      padding: 12px 20px;
       background-color: #1d72b8;
       color: white;
       border: none;
@@ -97,7 +110,10 @@
   </style>
 </head>
 <body>
-  <h1>일상을 여행처럼 일정 등록</h1>
+  <div class="header">
+    <img src="logo.jpg" alt="로고">
+    <h1>일상을 여행처럼 일정 등록</h1>
+  </div>
 
   <div class="form-group">
     <label for="title">업체명</label>
@@ -111,23 +127,23 @@
 
   <div class="form-group">
     <label>기간</label>
-    <div style="display: flex; flex-direction: row; gap: 10px; flex-wrap: wrap;">
-      <input type="date" id="date_s" style="flex: 1 1 40%" />
+    <div style="display: flex; gap: 10px;">
+      <input type="date" id="date_s" />
       <span style="line-height: 2.5;">~</span>
-      <input type="date" id="date_e" style="flex: 1 1 40%" />
+      <input type="date" id="date_e" />
     </div>
   </div>
 
   <div class="form-group">
     <label>가능요일</label>
     <div class="days-container">
-      <label class="day-label"><input type="checkbox" id="mon" checked /> 월</label>
-      <label class="day-label"><input type="checkbox" id="tue" checked /> 화</label>
-      <label class="day-label"><input type="checkbox" id="wed" checked /> 수</label>
-      <label class="day-label"><input type="checkbox" id="thu" checked /> 목</label>
-      <label class="day-label"><input type="checkbox" id="fri" checked /> 금</label>
-      <label class="day-label"><input type="checkbox" id="sat" checked /> 토</label>
-      <label class="day-label"><input type="checkbox" id="sun" checked /> 일</label>
+      <label class="day-label"><input type="checkbox" id="mon" checked />월</label>
+      <label class="day-label"><input type="checkbox" id="tue" checked />화</label>
+      <label class="day-label"><input type="checkbox" id="wed" checked />수</label>
+      <label class="day-label"><input type="checkbox" id="thu" checked />목</label>
+      <label class="day-label"><input type="checkbox" id="fri" checked />금</label>
+      <label class="day-label"><input type="checkbox" id="sat" checked />토</label>
+      <label class="day-label"><input type="checkbox" id="sun" checked />일</label>
     </div>
   </div>
 
