@@ -76,7 +76,7 @@
   </div>
 
   <button onclick="updateSchedule()">✔️ 수정 완료</button>
-  <button onclick="location.href='list.html'">📋 목록 보기</button>
+  <button onclick="location.href='mlist.html'">📋 목록 보기</button>
 
   <script>
     const supabase = window.supabase.createClient(
@@ -121,7 +121,7 @@
 
       if (error) return alert('수정 실패');
       alert('수정 완료!');
-      window.location.href = 'list.html';
+      window.location.href = 'mlist.html';
     }
 
     loadData();
