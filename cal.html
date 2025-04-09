@@ -20,7 +20,7 @@
       justify-content: center;
       align-items: center;
       gap: 10px;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
     }
     .header img {
       height: 40px;
@@ -63,17 +63,33 @@
       margin-right: 6px;
     }
     button {
-      padding: 12px 20px;
+      padding: 8px 14px;
       background-color: #1d72b8;
       color: white;
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 15px;
+      font-size: 14px;
     }
     button:hover {
       background-color: #135a96;
     }
+    .fc .fc-button {
+      background-color: #1d72b8;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 14px;
+    }
+    .fc .fc-button:hover {
+      background-color: #135a96;
+    }
+    .fc .fc-toolbar-title {
+      font-size: 1.4em;
+      font-weight: bold;
+      color: #333;
+    }
+
     /* 모달 */
     .modal-overlay {
       display: none;
@@ -164,12 +180,7 @@
     );
 
     function getColorMap(offices) {
-      const palette = [
-        '#e9fdc8', '#c4f2dc', '#fddd85', '#f9cccc', '#bbcbf6',
-        '#16a085', '#2c3e50', '#d35400', '#34495e', '#c0392b',
-        '#8e44ad', '#2ecc71', '#3498db', '#e74c3c', '#1abc9c',
-        '#7f8c8d', '#e84393', '#fd79a8', '#00cec9', '#6c5ce7'
-      ];
+      const palette = ['#e9fdc8', '#c4f2dc', '#fddd85', '#f9cccc', '#bbcbf6'];
       const colorMap = {};
       offices.forEach((office, i) => {
         colorMap[office] = palette[i % palette.length];
@@ -199,22 +210,16 @@
       }).join('');
 
       return filtered.map(item => {
-        const isDone = item.done === true;
-        const color = isDone ? '#ccc' : colorMap[item.office || '기타'];
+        const color = item.done ? '#ccc' : colorMap[item.office || '기타'];
         return {
           id: item.id,
           title: `${item.title} (${item.cost || '비용없음'})`,
           start: item.date_s,
           end: item.date_e ? new Date(new Date(item.date_e).getTime() + 86400000).toISOString().split('T')[0] : item.date_s,
-          extendedProps: {
-            memo: item.memo,
-            loca: item.loca,
-            cost: item.cost,
-            id: item.id
-          },
+          extendedProps: { memo: item.memo, loca: item.loca, cost: item.cost, id: item.id },
           backgroundColor: color,
           borderColor: color,
-	textColor: '#000'	
+          textColor: '#000'
         };
       });
     }
@@ -229,7 +234,6 @@
       const modal = document.getElementById('reportModal');
       const content = document.getElementById('modalContent');
       const title = document.getElementById('modalTitle');
-
       title.textContent = `일상을 여행처럼 ${dateStr} Report`;
       content.innerHTML = '불러오는 중...';
       modal.style.display = 'flex';
@@ -302,15 +306,49 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('showDone').checked = false;
+
       const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
         initialView: 'dayGridMonth',
         locale: 'ko',
         height: 'auto',
         headerToolbar: {
-          left: 'prev,next today',
+          left: 'prevBtn,nextBtn todayBtn',
           center: 'title',
-          right: 'dayGridMonth,listWeek'
+          right: 'monthBtn,listBtn'
         },
+        customButtons: {
+          prevBtn: {
+            text: '◁',
+            click() {
+              calendar.prev();
+            }
+          },
+          nextBtn: {
+            text: '▷',
+            click() {
+              calendar.next();
+            }
+          },
+          todayBtn: {
+            text: '📍 오늘',
+            click() {
+              calendar.today();
+            }
+          },
+          monthBtn: {
+            text: '📅 월간',
+            click() {
+              calendar.changeView('dayGridMonth');
+            }
+          },
+          listBtn: {
+            text: '📋 리스트',
+            click() {
+              calendar.changeView('listWeek');
+            }
+          }
+        },
+        titleFormat: { year: 'numeric', month: 'long' },
         events: await loadEvents(),
         eventClick: info => {
           if (confirm('이 일정을 수정하시겠습니까?')) {
