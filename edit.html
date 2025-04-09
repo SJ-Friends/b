@@ -75,6 +75,10 @@
     <textarea id="memo" rows="3"></textarea>
   </div>
 
+  <div class="form-group">
+    <label><input type="checkbox" id="done" /> 완료 여부</label>
+  </div>
+
   <button onclick="updateSchedule()">✔️ 수정 완료</button>
   <button onclick="location.href='list.html'">📋 목록 보기</button>
 
@@ -98,6 +102,7 @@
       document.getElementById('date_e').value = data.date_e;
       document.getElementById('cost').value = data.cost;
       document.getElementById('memo').value = data.memo;
+      document.getElementById('done').checked = data.done === true;
       days.forEach(day => {
         document.getElementById(day).checked = data[day] === 'Y';
       });
@@ -110,13 +115,14 @@
       const date_e = document.getElementById('date_e').value;
       const cost = document.getElementById('cost').value.trim();
       const memo = document.getElementById('memo').value.trim();
+      const done = document.getElementById('done').checked;
       const dayValues = {};
       days.forEach(day => {
         dayValues[day] = document.getElementById(day).checked ? 'Y' : null;
       });
 
       const { error } = await supabase.from('sche').update({
-        title, loca, date_s, date_e, cost, memo, ...dayValues
+        title, loca, date_s, date_e, cost, memo, done, ...dayValues
       }).eq('id', id);
 
       if (error) return alert('수정 실패');
