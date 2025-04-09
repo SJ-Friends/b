@@ -89,8 +89,6 @@
       font-weight: bold;
       color: #333;
     }
-
-    /* 모달 */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -108,7 +106,7 @@
     }
     .modal {
       position: relative;
-      background: #fff;
+      background: #fffbe6;
       border-radius: 8px;
       padding: 30px;
       max-width: 700px;
@@ -164,7 +162,6 @@
   <div id='calendar'></div>
   <div id="legend"></div>
 
-  <!-- 모달 -->
   <div class="modal-overlay" id="reportModal">
     <div class="modal">
       <button class="close-btn" onclick="closeModal()">✖</button>
@@ -178,6 +175,12 @@
       'https://xxmtxuhcdzidhrefrvwf.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4bXR4dWhjZHppZGhyZWZydndmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODAyNTQsImV4cCI6MjA1OTY1NjI1NH0.TaCCDlJvKrif_pZY038Qkglip8h-Qqjp2w2GlKwvoVg'
     );
+
+    function formatCost(value) {
+      const num = parseInt(value, 10);
+      if (isNaN(num)) return '0원';
+      return num.toLocaleString() + '원';
+    }
 
     function getColorMap(offices) {
       const palette = ['#e9fdc8', '#c4f2dc', '#fddd85', '#f9cccc', '#bbcbf6'];
@@ -213,7 +216,7 @@
         const color = item.done ? '#ccc' : colorMap[item.office || '기타'];
         return {
           id: item.id,
-          title: `${item.title} (${item.cost || '비용없음'})`,
+          title: `${item.title} (${formatCost(item.cost || '0')})`,
           start: item.date_s,
           end: item.date_e ? new Date(new Date(item.date_e).getTime() + 86400000).toISOString().split('T')[0] : item.date_s,
           extendedProps: { memo: item.memo, loca: item.loca, cost: item.cost, id: item.id },
@@ -284,10 +287,13 @@
           const end = new Date(item.date_e);
           const diff = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
           const dDay = diff === 0 ? 'D-DAY' : `D-${diff}`;
+          let detail = `${item.loca}</span> / ${formatCost(item.cost || '0')}`;
+          if (item.memo) detail += ` / ${item.memo}`;
+
           return `
             <li>
               <strong><a href="edit.html?id=${item.id}">${item.title}</a></strong>
-              (<span class="link-button" onclick="window.open('https://map.naver.com/v5/search/${mapQuery}', '_blank')">${item.loca}</span> / ${item.cost || '0원'})
+              (<span class="link-button" onclick="window.open('https://map.naver.com/v5/search/${mapQuery}', '_blank')">${detail})
               <div class="small-note">가능요일: ${availableDays || '없음'}</div>
               <div class="small-note">마감일: ${item.date_e || '미정'} (${dDay})</div>
             </li>`;
