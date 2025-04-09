@@ -168,8 +168,12 @@
     document.addEventListener('DOMContentLoaded', () => {
       const supabase = window.supabase.createClient(
         'https://xxmtxuhcdzidhrefrvwf.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4bXR4dWhjZHppZGhyZWZydndmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODAyNTQsImV4cCI6MjA1OTY1NjI1NH0.TaCCDlJvKrif_pZY038Qkglip8h-Qqjp2w2GlKwvoVg'
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...YOUR-KEY'
       );
+
+      // ✅ 시작일을 오늘 날짜로 설정
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById('date_s').value = today;
 
       async function submitForm() {
         const title = document.getElementById('title').value.trim();
@@ -207,6 +211,7 @@
           outputBox.textContent =
             `✔️ ${title} 일정이 등록되었습니다.\n위치: ${loca}\n기간: ${date_s} ~ ${date_e}\n요일: ${days.filter(d => dayValues[d] === 'Y').join(', ')}\n지원금액: ${cost}\n메모: ${memo}`;
           document.querySelectorAll('input[type="text"], textarea, input[type="date"]').forEach(el => el.value = '');
+          document.getElementById('date_s').value = today;
           days.forEach(day => document.getElementById(day).checked = true);
         }
       }
