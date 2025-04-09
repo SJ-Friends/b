@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>일상을 여행처럼 일정 등록</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { font-family: 'Segoe UI', sans-serif; background: #f9f9f9; padding: 40px; max-width: 600px; margin: auto; }
@@ -12,7 +12,7 @@
     .header h1 { margin: 0; font-size: 1.5em; }
     .form-group { display: flex; flex-direction: column; margin-bottom: 20px; }
     label { font-weight: bold; margin-bottom: 5px; }
-    input[type="text"], input[type="date"], textarea {
+    input[type="text"], input[type="date"], textarea, select {
       padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;
     }
     textarea { resize: vertical; }
@@ -71,6 +71,19 @@
   </div>
 
   <div class="form-group">
+    <label for="office">체험단</label>
+    <select id="office">
+      <option value="강남맛집">강남맛집</option>
+      <option value="리뷰노트">리뷰노트</option>
+      <option value="몬스터">몬스터</option>
+      <option value="체험뷰">체험뷰</option>
+      <option value="가보자">가보자</option>
+      <option value="톡톡">톡톡</option>
+      <option value="기타">기타</option>
+    </select>
+  </div>
+
+  <div class="form-group">
     <label for="memo">Memo</label>
     <textarea id="memo" rows="3"></textarea>
   </div>
@@ -96,6 +109,7 @@
       const date_s = document.getElementById('date_s').value;
       const date_e = document.getElementById('date_e').value;
       const cost = document.getElementById('cost').value.trim();
+      const office = document.getElementById('office').value;
       const memo = document.getElementById('memo').value.trim();
 
       const dayValues = {};
@@ -109,7 +123,7 @@
       }
 
       const { error } = await supabase.from('sche').insert([{
-        title, loca, date_s, date_e, cost, memo, ...dayValues
+        title, loca, date_s, date_e, cost, office, memo, ...dayValues
       }]);
 
       if (error) {
