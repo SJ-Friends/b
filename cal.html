@@ -165,7 +165,7 @@
 
     function getColorMap(offices) {
       const palette = [
-        '#1d72b8', '#b0a516', '#27ae60', '#9b59b6', '#f39c12',
+        '#e9fdc8', '#c4f2dc', '#fddd85', '#f9cccc', '#bbcbf6',
         '#16a085', '#2c3e50', '#d35400', '#34495e', '#c0392b',
         '#8e44ad', '#2ecc71', '#3498db', '#e74c3c', '#1abc9c',
         '#7f8c8d', '#e84393', '#fd79a8', '#00cec9', '#6c5ce7'
@@ -213,7 +213,8 @@
             id: item.id
           },
           backgroundColor: color,
-          borderColor: color
+          borderColor: color,
+	textColor: '#000'	
         };
       });
     }
