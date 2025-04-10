@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<title>일상을 여행처럼 일정 수정</title>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f9f9f9; padding: 40px; max-width: 600px; margin: auto; }
+    .header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 30px; }
+    .header img { height: 40px; }
+    .header h1 { margin: 0; font-size: 1.5em; }
+    .form-group { display: flex; flex-direction: column; margin-bottom: 20px; }
+    label { font-weight: bold; margin-bottom: 5px; }
+    input[type="text"], input[type="date"], textarea, select {
+      padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;
+    }
+    textarea { resize: vertical; }
+    .days-container {
+      display: flex; flex-wrap: wrap; gap: 10px;
+    }
+    .day-label {
+      display: flex; align-items: center; gap: 4px; font-size: 13px;
+    }
+    button {
+      padding: 12px 20px; background-color: #1d72b8; color: white; border: none;
+      border-radius: 6px; cursor: pointer; font-size: 15px; width: 100%; margin-bottom: 10px;
+    }
+    button:hover { background-color: #135a96; }
+  </style>
+</head>
+<body>
+<div class="header">
+<img alt="로고" src="logo.jpg"/>
+<h1>일상을 여행처럼 일정 수정</h1>
+</div>
+<div class="form-group">
+<label for="title">업체명</label>
+<input id="title" type="text"/>
+</div>
+<div class="form-group">
+<label for="loca">위치</label>
+<input id="loca" type="text"/>
+</div>
+<div class="form-group">
+<label>기간</label>
+<div style="display: flex; gap: 10px;">
+<input id="date_s" type="date"/> ~ <input id="date_e" type="date"/>
+</div>
+</div>
+<div class="form-group">
+<label>가능요일</label>
+<div class="days-container">
+<label class="day-label"><input id="mon" type="checkbox"/> 월</label>
+<label class="day-label"><input id="tue" type="checkbox"/> 화</label>
+<label class="day-label"><input id="wed" type="checkbox"/> 수</label>
+<label class="day-label"><input id="thu" type="checkbox"/> 목</label>
+<label class="day-label"><input id="fri" type="checkbox"/> 금</label>
+<label class="day-label"><input id="sat" type="checkbox"/> 토</label>
+<label class="day-label"><input id="sun" type="checkbox"/> 일</label>
+</div>
+</div>
+<div class="form-group">
+<label for="cost">지원금액</label>
+<input id="cost" type="text"/>
+</div><div class="form-group"><label for="tel">신청 연락처</label><div style="display: flex; gap: 10px; align-items: center;"><a href="#" id="smsLink" style="text-decoration: none; background: #007bff; color: white; padding: 8px 12px; border-radius: 6px;">📩</a><a href="#" id="callLink" style="text-decoration: none; background: #28a745; color: white; padding: 8px 12px; border-radius: 6px;">📞</a></div><div style="display: flex; gap: 10px; align-items: center;"><input id="tel" inputmode="numeric" pattern="[0-9]*" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; flex: 1; flex: 1;" type="text"/><a href="#" id="smsLink" style="text-decoration: none; background: #007bff; color: white; padding: 8px 12px; border-radius: 6px; display: inline-block;" target="_blank">📩</a><a href="#" id="callLink" style="text-decoration: none; background: #28a745; color: white; padding: 8px 12px; border-radius: 6px; display: inline-block;" target="_blank">📞</a></div></div>
+<div class="form-group">
+<label for="office">체험단</label>
+<select id="office">
+<option value="강남맛집">강남맛집</option>
+<option value="리뷰노트">리뷰노트</option>
+<option value="몬스터">몬스터</option>
+<option value="체험뷰">체험뷰</option>
+<option value="가보자">가보자</option>
+<option value="톡톡">톡톡</option>
+<option value="기타">기타</option>
+</select>
+</div>
+<div class="form-group">
+<label for="memo">Memo</label>
+<textarea id="memo" rows="3"></textarea>
+</div>
+<div class="form-group">
+<label><input id="done" type="checkbox"/> 완료 여부</label>
+</div>
+<button onclick="updateSchedule()">✔️ 수정 완료</button>
+<button onclick="location.href='list.html'">📋 목록 보기</button>
+<script>
+    const supabase = window.supabase.createClient(
+      'https://xxmtxuhcdzidhrefrvwf.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4bXR4dWhjZHppZGhyZWZydndmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODAyNTQsImV4cCI6MjA1OTY1NjI1NH0.TaCCDlJvKrif_pZY038Qkglip8h-Qqjp2w2GlKwvoVg'
+    );
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get("id");
+    const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+    async function loadData() {
+      const { data, error } = await supabase.from('sche').select('*').eq('id', id).single();
+      if (error || !data) return alert('데이터 로드 실패');
+
+      document.getElementById('title').value = data.title;
+      document.getElementById('loca').value = data.loca;
+      document.getElementById('date_s').value = data.date_s;
+      document.getElementById('date_e').value = data.date_e;
+      document.getElementById('cost').value = data.cost;
+      document.getElementById('office').value = data.office || '기타';
+      document.getElementById('tel').value = data.tel || '';
+      document.getElementById('memo').value = data.memo;
+      document.getElementById('done').checked = data.done === true;
+      days.forEach(day => {
+        document.getElementById(day).checked = data[day] === 'Y';
+      });
+    }
+
+    async function updateSchedule() {
+      const title = document.getElementById('title').value.trim();
+      const loca = document.getElementById('loca').value.trim();
+      const date_s = document.getElementById('date_s').value;
+      const date_e = document.getElementById('date_e').value;
+      const cost = document.getElementById('cost').value.trim();
+      const tel = document.getElementById('tel').value.trim();
+      const office = document.getElementById('office').value;
+      const memo = document.getElementById('memo').value.trim();
+      const done = document.getElementById('done').checked;
+
+      const dayValues = {};
+      days.forEach(day => {
+        dayValues[day] = document.getElementById(day).checked ? 'Y' : null;
+      });
+
+      const { error } = await supabase.from('sche').update({
+        title, loca, date_s, date_e, cost, tel, office, memo, done, ...dayValues
+      }).eq('id', id);
+
+      if (error) return alert('수정 실패');
+      alert('수정 완료!');
+      window.location.href = 'cal.html';
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
