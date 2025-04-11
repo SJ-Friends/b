@@ -1,11 +1,21 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>일상을 여행처럼 일정 목록</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
+<meta charset="utf-8"/>
+<title>일상을 여행처럼 일정 목록</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<style>
+    th:nth-child(3), td:nth-child(3) { min-width: 120px; }  /* 업체명 */
+    th:nth-child(4), td:nth-child(4) { min-width: 80px; }   /* 비용 */
+    th:nth-child(5), td:nth-child(5) { min-width: 80px; }   /* 위치 */
+    th:nth-child(8), td:nth-child(8) { min-width: 120px; }  /* 불가능 요일 */
+    th:nth-child(9), td:nth-child(9) { min-width: 90px; }   /* 체험단 */
+    th:nth-child(10), td:nth-child(10) { min-width: 60px; } /* 메모 */
+    th:nth-child(11), td:nth-child(11),
+    th:nth-child(12), td:nth-child(12) { min-width: 70px; } /* 수정, 삭제 버튼 */
+
     body { font-family: 'Segoe UI', sans-serif; padding: 30px; max-width: 1000px; margin: auto; }
     .header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; }
     .header img { height: 40px; }
@@ -33,107 +43,136 @@
   </style>
 </head>
 <body>
-  <div class="header">
-    <img src="logo.jpg" alt="로고">
-    <h1>일상을 여행처럼 일정 목록</h1>
-  </div>
+<div class="header">
+<img alt="로고" src="logo.jpg"/>
+<h1>일상을 여행처럼 일정 목록</h1>
+</div>
+<div class="top-bar">
+<div>
+<label for="sort">정렬 기준:</label>
+<select id="sort">
+<option value="date_s">시작 날짜</option>
+<option selected="" value="date_e">종료 날짜</option>
+<option value="created_at">입력 날짜</option>
+</select>
+</div>
+<div class="button-group">
+<label><input checked="" id="showDone" type="checkbox"/> 완료 포함</label>
+<button onclick="location.href='index.html'">➕ 등록하기</button>
+<button onclick="location.href='cal.html'">📅 달력 보기</button>
+</div>
+</div>
+<table id="schedule-table">
+<thead>
+<tr>
+<th>완료</th>
+<th>#</th>
+<th>업체명</th>
+<th>비용</th>
+<th>위치</th>
+<th>시작일</th>
+<th>종료일</th>
+<th>불가능 요일</th>
+<th>체험단</th>
+<th>메모</th>
+<th>수정</th>
+<th>삭제</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+<script>
+const supabase = window.supabase.createClient(
+  'https://xxmtxuhcdzidhrefrvwf.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4bXR4dWhjZHppZGhyZWZydndmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODAyNTQsImV4cCI6MjA1OTY1NjI1NH0.TaCCDlJvKrif_pZY038Qkglip8h-Qqjp2w2GlKwvoVg'
+);
 
-  <div class="top-bar">
-    <div>
-      <label for="sort">정렬 기준:</label>
-      <select id="sort">
-        <option value="date_s">시작 날짜</option>
-        <option value="date_e" selected>종료 날짜</option>
-        <option value="created_at">입력 날짜</option>
-      </select>
-    </div>
-    <div class="button-group">
-      <label><input type="checkbox" id="showDone" checked /> 완료 포함</label>
-      <button onclick="location.href='index.html'">➕ 등록하기</button>
-      <button onclick="location.href='cal.html'">📅 달력 보기</button>
-    </div>
-  </div>
+const dayNames = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const dayKor = { mon:'월', tue:'화', wed:'수', thu:'목', fri:'금', sat:'토', sun:'일' };
 
-  <table id="schedule-table">
-    <thead>
-      <tr>
-        <th>완료</th>
-        <th>#</th>
-        <th>업체명</th>
-        <th>비용</th>
-        <th>위치</th>
-        <th>시작일</th>
-        <th>종료일</th>
-        <th>불가능 요일</th>
-        <th>체험단</th>
-        <th>메모</th>
-        <th>수정</th>
-        <th>삭제</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
 
-  <script>
-    const supabase = window.supabase.createClient(
-      'https://xxmtxuhcdzidhrefrvwf.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4bXR4dWhjZHppZGhyZWZydndmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODAyNTQsImV4cCI6MjA1OTY1NjI1NH0.TaCCDlJvKrif_pZY038Qkglip8h-Qqjp2w2GlKwvoVg'
-    );
+function formatShortDate(dateStr) {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return parts[1] + '/' + parts[2];
+  }
+  return dateStr;
+}
 
-    const dayNames = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-    const dayKor = { mon:'월', tue:'화', wed:'수', thu:'목', fri:'금', sat:'토', sun:'일' };
+async function loadSchedules(sortBy = 'date_e') {
+  const showDone = document.getElementById('showDone').checked;
+  let query = supabase.from('sche').select('*').order(sortBy, { ascending: true });
+  if (!showDone) query = query.eq('done', false);
+  const { data, error } = await query;
 
-    async function loadSchedules(sortBy = 'date_e') {
-      const showDone = document.getElementById('showDone').checked;
-      let query = supabase.from('sche').select('*').order(sortBy, { ascending: true });
-      if (!showDone) query = query.eq('done', false);
-      const { data, error } = await query;
+  if (error) return alert('데이터 불러오기 실패');
 
-      if (error) return alert('데이터 불러오기 실패');
+  const tbody = document.querySelector('#schedule-table tbody');
+  tbody.innerHTML = '';
+  data.forEach((item, index) => {
+    const tr = document.createElement('tr');
 
-      const tbody = document.querySelector('#schedule-table tbody');
-      tbody.innerHTML = '';
-      data.forEach((item, index) => {
-        const tr = document.createElement('tr');
+    const unavailable = dayNames.filter(day => item[day] !== 'Y').map(day => dayKor[day]).join(', ');
+    const mapQuery = encodeURIComponent(`${item.title} ${item.loca}`);
+    const mapLink = `https://map.naver.com/v5/search/${mapQuery}`;
 
-        const unavailable = dayNames.filter(day => item[day] !== 'Y').map(day => dayKor[day]).join(', ');
-        const mapQuery = encodeURIComponent(`${item.title} ${item.loca}`);
-        const mapLink = `https://map.naver.com/v5/search/${mapQuery}`;
+    tr.innerHTML = `
+      <td><input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleDone(${item.id}, this.checked)"></td>
+      <td>${index + 1}</td>
+      <td>${item.title}</td>
+      <td>${item.cost}</td>
+      <td><span class="link-button" onclick="window.open('${mapLink}', '_blank')">${item.loca}</span></td>
+    `;
 
-        tr.innerHTML = `
-          <td><input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleDone(${item.id}, this.checked)"></td>
-          <td>${index + 1}</td>
-          <td>${item.title}</td>
-          <td>${item.cost}</td>
-          <td><span class="link-button" onclick="window.open('${mapLink}', '_blank')">${item.loca}</span></td>
-          <td>${item.date_s || ''}</td>
-          <td>${item.date_e || ''}</td>
-          <td>${unavailable}</td>
-          <td>${item.office || ''}</td>
-          <td class="tooltip" title="${item.memo || ''}">💬</td>
-          <td><button onclick="location.href='edit.html?id=${item.id}'">수정</button></td>
-          <td><button onclick="deleteSchedule(${item.id})">삭제</button></td>
-        `;
+    const tdStart = document.createElement('td');
+    tdStart.textContent = formatShortDate(item.date_s);
+    tr.appendChild(tdStart);
 
-        tbody.appendChild(tr);
-      });
-    }
+    const tdEnd = document.createElement('td');
+    tdEnd.textContent = formatShortDate(item.date_e);
+    tr.appendChild(tdEnd);
 
-    async function deleteSchedule(id) {
-      if (!confirm('정말 삭제하시겠습니까?')) return;
-      const { error } = await supabase.from('sche').delete().eq('id', id);
-      if (error) return alert('삭제 실패');
-      loadSchedules(document.getElementById('sort').value);
-    }
+    const tdUnavailable = document.createElement('td');
+    tdUnavailable.textContent = unavailable;
+    tr.appendChild(tdUnavailable);
 
-    async function toggleDone(id, checked) {
-      await supabase.from('sche').update({ done: checked }).eq('id', id);
-    }
+    const tdOffice = document.createElement('td');
+    tdOffice.textContent = item.office || '';
+    tr.appendChild(tdOffice);
 
-    document.getElementById('sort').addEventListener('change', e => loadSchedules(e.target.value));
-    document.getElementById('showDone').addEventListener('change', () => loadSchedules(document.getElementById('sort').value));
-    // ✅ 초기 정렬기준을 date_e로 설정
-    window.addEventListener('DOMContentLoaded', () => loadSchedules('date_e'));
-  </script>
+    const tdMemo = document.createElement('td');
+    tdMemo.className = "tooltip";
+    tdMemo.title = item.memo || '';
+    tdMemo.innerHTML = "💬";
+    tr.appendChild(tdMemo);
+
+    const tdEdit = document.createElement('td');
+    tdEdit.innerHTML = `<button onclick="location.href='edit.html?id=${item.id}'">수정</button>`;
+    tr.appendChild(tdEdit);
+
+    const tdDelete = document.createElement('td');
+    tdDelete.innerHTML = `<button onclick="deleteSchedule(${item.id})">삭제</button>`;
+    tr.appendChild(tdDelete);
+
+    tbody.appendChild(tr);
+  });
+}
+
+async function deleteSchedule(id) {
+  if (!confirm('정말 삭제하시겠습니까?')) return;
+  const { error } = await supabase.from('sche').delete().eq('id', id);
+  if (error) return alert('삭제 실패');
+  loadSchedules(document.getElementById('sort').value);
+}
+
+async function toggleDone(id, checked) {
+  await supabase.from('sche').update({ done: checked }).eq('id', id);
+}
+
+document.getElementById('sort').addEventListener('change', e => loadSchedules(e.target.value));
+document.getElementById('showDone').addEventListener('change', () => loadSchedules(document.getElementById('sort').value));
+window.addEventListener('DOMContentLoaded', () => loadSchedules('date_e'));
+</script>
 </body>
 </html>
