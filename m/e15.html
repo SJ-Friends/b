@@ -5,7 +5,7 @@
 <meta charset="utf-8"/>
 <title>일상을 여행처럼 일정 수정</title>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
     body { font-family: 'Segoe UI', sans-serif; background: #f9f9f9; padding: 40px; max-width: 600px; margin: auto; }
     .header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 30px; }
@@ -64,7 +64,7 @@
 <div class="form-group">
 <label for="cost">지원금액</label>
 <input id="cost" type="text"/>
-</div><div class="form-group"><label for="tel">신청 연락처</label><input id="tel" inputmode="numeric" pattern="[0-9]*" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;" type="text"/></div>
+</div><div class="form-group"><label for="tel">신청 연락처</label><div style="display: flex; gap: 10px; align-items: center;"><input id="tel" inputmode="numeric" pattern="[0-9]*" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;; flex: 1;" type="text"/><button id="smsBtn" style="background:#007bff;color:white;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;" type="button">📩</button><button id="callBtn" style="background:#28a745;color:white;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;" type="button">📞</button></div></div>
 <div class="form-group">
 <label for="office">체험단</label>
 <select id="office">
@@ -86,39 +86,60 @@
 </div>
 <button onclick="updateSchedule()">✔️ 수정 완료</button>
 <button onclick="location.href='list.html'">📋 목록 보기</button>
-
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-  const params = new URLSearchParams(window.location.search);
-  const tel = params.get("tel");
-  console.log("✅ JS 실행됨, tel =", tel);
+    const supabase = window.supabase.createClient(
+      'https://xxmtxuhcdzidhrefrvwf.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4bXR4dWhjZHppZGhyZWZydndmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODAyNTQsImV4cCI6MjA1OTY1NjI1NH0.TaCCDlJvKrif_pZY038Qkglip8h-Qqjp2w2GlKwvoVg'
+    );
 
-  if (tel) {
-    const cleaned = tel.replace(/[^0-9]/g, '');
-    console.log("📞 cleaned tel:", cleaned);
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get("id");
+    const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
-    const sms = document.createElement("a");
-    sms.href = "sms:" + cleaned;
-    sms.textContent = "📩 문자 보내기";
-    sms.style.cssText = "background:#007bff;color:white;padding:10px 16px;margin-right:10px;border-radius:6px;text-decoration:none;display:inline-block;font-size:18px;";
+    async function loadData() {
+      const { data, error } = await supabase.from('sche').select('*').eq('id', id).single();
+      if (error || !data) return alert('데이터 로드 실패');
 
-    const call = document.createElement("a");
-    call.href = "tel:" + cleaned;
-    call.textContent = "📞 전화하기";
-    call.style.cssText = "background:#28a745;color:white;padding:10px 16px;border-radius:6px;text-decoration:none;display:inline-block;font-size:18px;";
+      document.getElementById('title').value = data.title;
+      document.getElementById('loca').value = data.loca;
+      document.getElementById('date_s').value = data.date_s;
+      document.getElementById('date_e').value = data.date_e;
+      document.getElementById('cost').value = data.cost;
+      document.getElementById('office').value = data.office || '기타';
+      document.getElementById('tel').value = data.tel || '';
+      document.getElementById('memo').value = data.memo;
+      document.getElementById('done').checked = data.done === true;
+      days.forEach(day => {
+        document.getElementById(day).checked = data[day] === 'Y';
+      });
+    }
 
-    const wrapper = document.createElement("div");
-    wrapper.style.cssText = "margin-top:30px;text-align:center;";
-    wrapper.appendChild(sms);
-    wrapper.appendChild(call);
+    async function updateSchedule() {
+      const title = document.getElementById('title').value.trim();
+      const loca = document.getElementById('loca').value.trim();
+      const date_s = document.getElementById('date_s').value;
+      const date_e = document.getElementById('date_e').value;
+      const cost = document.getElementById('cost').value.trim();
+      const tel = document.getElementById('tel').value.trim();
+      const office = document.getElementById('office').value;
+      const memo = document.getElementById('memo').value.trim();
+      const done = document.getElementById('done').checked;
 
-    console.log("📦 append wrapper to body:", wrapper);
+      const dayValues = {};
+      days.forEach(day => {
+        dayValues[day] = document.getElementById(day).checked ? 'Y' : null;
+      });
 
-    // 페이지에 삽입
-    document.body.appendChild(wrapper);
-  } else {
-    console.warn("❌ tel 파라미터 없음");
-  }
-});
-</script></body>
+      const { error } = await supabase.from('sche').update({
+        title, loca, date_s, date_e, cost, tel, office, memo, done, ...dayValues
+      }).eq('id', id);
+
+      if (error) return alert('수정 실패');
+      alert('수정 완료!');
+      window.location.href = 'cal.html';
+    }
+
+    loadData();
+  </script>
+</body>
 </html>
