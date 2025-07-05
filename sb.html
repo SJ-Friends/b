@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>박수빈 근무일정 뷰어</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { 
+      font-family: 'Pretendard', '맑은 고딕', Arial, sans-serif; 
+      background: #f8fafc;
+      margin: 0; 
+      padding: 0; 
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .work-schedule-container {
+      background: #fff;
+      border-radius: 1.5rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+      max-width: 420px;
+      padding: 2.5rem 2rem 2rem 2rem;
+      width: 100%;
+      text-align: center;
+    }
+    .date-nav {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .nav-btn {
+      background: #f0f3fa;
+      border: none;
+      border-radius: 50%;
+      width: 2.5rem;
+      height: 2.5rem;
+      font-size: 1.3rem;
+      color: #64748b;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .nav-btn:hover { background: #e2e8f0; }
+    .today-label {
+      font-size: 1.2rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .work-info {
+      margin: 2.5rem 0 1.2rem 0;
+      font-size: 1.15rem;
+      min-height: 2.6rem;
+      color: #334155;
+      font-weight: 500;
+    }
+    .show-all-btn {
+      margin-top: 1rem;
+      padding: 0.7rem 1.5rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 1rem;
+      background: #0ea5e9;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .show-all-btn:hover { background: #0284c7; }
+    .all-schedule-table {
+      margin-top: 2rem;
+      border-collapse: collapse;
+      width: 100%;
+      background: #f8fafc;
+      border-radius: 1rem;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      display: none;
+      font-size: 0.98rem;
+    }
+    .all-schedule-table th, .all-schedule-table td {
+      padding: 0.7rem 0.3rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .all-schedule-table th {
+      background: #f0f3fa;
+      color: #2563eb;
+    }
+    .all-schedule-table tr:last-child td { border-bottom: none; }
+  </style>
+</head>
+<body>
+  <div class="work-schedule-container">
+    <div class="date-nav">
+      <button class="nav-btn" id="prevDay" title="전날">&larr;</button>
+      <span class="today-label" id="todayLabel"></span>
+      <button class="nav-btn" id="nextDay" title="다음날">&rarr;</button>
+    </div>
+    <div class="work-info" id="workInfo"></div>
+    <button class="show-all-btn" id="showAllBtn">전체 일정 보기</button>
+    <table class="all-schedule-table" id="allScheduleTable">
+      <thead>
+        <tr>
+          <th>날짜</th>
+          <th>요일</th>
+          <th>근무조</th>
+          <th>근무시간</th>
+        </tr>
+      </thead>
+      <tbody id="allScheduleBody">
+      </tbody>
+    </table>
+  </div>
+  <script>
+    // 오늘 기준 2025년 7월 6일이 스케줄에 반영된 예시 /////////////////////////////////////////
+const subinSchedule = {
+  "2025-07-07": "B",
+  "2025-07-08": "휴무신청",
+  "2025-07-09": "휴무신청",
+  "2025-07-10": "B",
+  "2025-07-11": "C",
+  "2025-07-12": "B",
+  "2025-07-13": "C"
+};
+
+    const workTimes = {
+      "A": "09:00~17:00",
+      "B": "13:30~21:30",
+      "C": "12:00~20:00"
+    };
+    const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+
+    // 오늘이 스케줄에 있으면 오늘로, 없으면 가장 첫 스케줄 날짜로
+function getInitialDate() {
+  return new Date(); // 무조건 오늘 날짜
+}
+
+
+    // 날짜 포맷 함수
+    function formatDate(dateObj) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const d = String(dateObj.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+    function getWeekday(dateObj) {
+      return weekdays[dateObj.getDay()];
+    }
+    // 날짜별 정보 출력
+    function renderInfo(dateObj) {
+      const dateStr = formatDate(dateObj);
+      const yoil = getWeekday(dateObj);
+      document.getElementById('todayLabel').innerText = `${dateStr} (${yoil})`;
+      const workType = subinSchedule[dateStr];
+      let info = "";
+      if (!workType) {
+        info = "근무일정 정보가 없습니다";
+      } else if (workType === "휴무신청") {
+        info = "박수빈님은 휴무입니다.";
+      } else {
+        info = `박수빈님의 근무시간은 <b>${workTimes[workType]}</b> 입니다.`;
+      }
+      document.getElementById('workInfo').innerHTML = info;
+    }
+
+    let curDate = getInitialDate();
+
+    document.getElementById('prevDay').onclick = function() {
+      curDate.setDate(curDate.getDate() - 1);
+      renderInfo(curDate);
+    };
+    document.getElementById('nextDay').onclick = function() {
+      curDate.setDate(curDate.getDate() + 1);
+      renderInfo(curDate);
+    };
+
+    document.getElementById('showAllBtn').onclick = function() {
+      const table = document.getElementById('allScheduleTable');
+      if (table.style.display === "table") {
+        table.style.display = "none";
+        this.innerText = "전체 일정 보기";
+      } else {
+        table.style.display = "table";
+        this.innerText = "닫기";
+      }
+    };
+
+    function renderAllSchedule() {
+      const body = document.getElementById('allScheduleBody');
+      body.innerHTML = "";
+      Object.keys(subinSchedule).sort().forEach(dateStr => {
+        const dateObj = new Date(dateStr);
+        const yoil = getWeekday(dateObj);
+        const workType = subinSchedule[dateStr];
+        let time = "";
+        if (!workType) time = "-";
+        else if (workType === "휴무신청") time = "휴무";
+        else time = workTimes[workType];
+        body.innerHTML += `
+          <tr>
+            <td>${dateStr}</td>
+            <td>${yoil}</td>
+            <td>${workType}</td>
+            <td>${time}</td>
+          </tr>
+        `;
+      });
+    }
+
+    renderInfo(curDate);
+    renderAllSchedule();
+  </script>
+</body>
+</html>
