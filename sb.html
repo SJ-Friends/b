@@ -117,8 +117,8 @@
 const subinSchedule = {
   // 1주차
   "2025-07-07": "B",
-  "2025-07-08": "휴무신청",
-  "2025-07-09": "휴무신청",
+  "2025-07-08": "휴무",
+  "2025-07-09": "휴무",
   "2025-07-10": "B",
   "2025-07-11": "C",
   "2025-07-12": "B",
@@ -165,7 +165,7 @@ function getInitialDate() {
       let info = "";
       if (!workType) {
         info = "근무일정 정보가 없습니다";
-      } else if (workType === "휴무신청") {
+      } else if (workType === "휴무") {
         info = "박수빈님은 휴무입니다.";
       } else {
         info = `박수빈님의 근무시간은 <b>${workTimes[workType]}</b> 입니다.`;
