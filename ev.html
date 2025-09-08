@@ -6,42 +6,33 @@
 <title>EV 주행비 계산기 — GV60 기준</title>
 <style>
   :root{
-    --bg:#0b1324; --card:#111a33; --muted:#9fb0d1; --text:#e8efff; --acc:#7aa2ff; --good:#4ade80; --warn:#facc15;
+    --bg:#0b1324; --card:#111a33; --muted:#9fb0d1; --text:#e8efff; --acc:#7aa2ff; --good:#4ade80;
     --border:rgba(255,255,255,0.08);
   }
-  *{box-sizing:border-box}
-  body{margin:0; background:linear-gradient(180deg,#0a1022,#0c1430 50%,#0a1022); color:var(--text); font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, 'Apple SD Gothic Neo', 'Noto Sans KR', '맑은 고딕', sans-serif;}
+  body{margin:0; background:#0a1022; color:var(--text); font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans KR",sans-serif;}
   .wrap{max-width:920px; margin:32px auto; padding:16px;}
   .card{background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px; box-shadow:0 6px 28px rgba(0,0,0,.22);}
-  h1{font-size:24px; margin:0 0 8px; letter-spacing:.3px}
-  p.lead{margin:6px 0 18px; color:var(--muted)}
+  h1{font-size:24px; margin:0 0 8px;}
   .grid{display:grid; grid-template-columns:1fr; gap:14px}
   @media(min-width:760px){.grid{grid-template-columns:1fr 1fr}}
   label{display:block; font-weight:600; margin:2px 0 6px;}
   .input{display:flex; border:1px solid var(--border); border-radius:14px; background:#0b1430; align-items:center; padding:10px 12px; gap:8px}
   .input input{flex:1; background:transparent; border:0; outline:0; color:var(--text); font-size:18px}
   .suffix{color:var(--muted); font-size:14px}
-  .row{display:flex; gap:10px; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px dashed var(--border)}
-  .row:last-child{border-bottom:0}
-  .pill{display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; border:1px solid var(--border); color:var(--muted); font-size:12px}
-  .btn{background:var(--acc); color:#07122a; border:0; padding:11px 16px; border-radius:12px; font-weight:700; cursor:pointer}
-  .btn:active{transform:translateY(1px)}
-  .muted{color:var(--muted)}
-  .monospace{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
-  .result{font-size:22px; font-weight:800}
-  .small{font-size:12px}
-  .table{width:100%; border-collapse: collapse; margin-top:12px}
-  .table th, .table td{padding:10px 8px; border-bottom:1px dashed var(--border); text-align:right}
-  .table th{text-align:left; color:var(--muted); font-weight:600}
+  .table{width:100%; border-collapse:collapse; margin-top:12px}
+  .table th,.table td{padding:10px 8px; border-bottom:1px dashed var(--border); text-align:right}
+  .table th{text-align:left; color:var(--muted);}
   .hl{color:var(--good); font-weight:800}
-  footer{margin-top:18px; color:var(--muted); font-size:12px; text-align:center}
+  .row{display:flex; justify-content:space-between; padding:10px 12px; border-bottom:1px dashed var(--border)}
+  .row:last-child{border-bottom:0}
+  .result{font-size:22px; font-weight:800}
 </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>EV 주행비 계산기 <span class="pill">GV60 기준</span></h1>
-      <p class="lead">입력: <strong>거리</strong>와 <strong>연비(효율)</strong>. 결과: 예상 충전비. <span class="muted">단가 295.9원/kWh, 1%당 266원(관측치)을 함께 반영합니다.</span></p>
+      <h1>EV 주행비 계산기 <span style="font-size:14px;color:var(--muted)">GV60 기준</span></h1>
+      <p>입력: <strong>거리</strong>, <strong>연비</strong>, <strong>단가</strong>. 결과: 예상 충전비.</p>
 
       <div class="grid">
         <div>
@@ -52,117 +43,61 @@
           <label for="eff">연비(효율)</label>
           <div class="input"><input id="eff" type="number" min="0.1" step="0.1" value="5.0" oninput="calc()"><span class="suffix">km/kWh</span></div>
         </div>
-      </div>
-
-      <div style="margin-top:16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap">
-        <span class="pill monospace">단가: 295.9 원/kWh</span>
-        <span class="pill monospace">1% 요금(관측치): 266 원</span>
-        <span class="pill monospace">GV60 팩(명목): 77.4 kWh</span>
+        <div>
+          <label for="priceKwh">단가</label>
+          <div class="input"><input id="priceKwh" type="number" min="0" step="0.1" value="295.9" oninput="calc()"><span class="suffix">원/kWh</span></div>
+        </div>
+        <div>
+          <label for="pricePercent">1% 요금(관측치)</label>
+          <div class="input"><input id="pricePercent" type="number" min="0" step="1" value="266" oninput="calc()"><span class="suffix">원</span></div>
+        </div>
       </div>
 
       <table class="table" id="table">
         <thead>
-          <tr>
-            <th>계산 방식</th>
-            <th>소비 전력</th>
-            <th>소비 %</th>
-            <th>예상 요금</th>
-          </tr>
+          <tr><th>계산 방식</th><th>소비 전력</th><th>소비 %</th><th>예상 요금</th></tr>
         </thead>
-        <tbody>
-          <!-- rows inserted by JS -->
-        </tbody>
+        <tbody></tbody>
       </table>
 
-      <div class="row">
-        <div class="muted">총 예상 주행비</div>
-        <div class="result" id="total">0 원</div>
-      </div>
-
-      <div class="row small">
-        <div class="muted">비고</div>
-        <div style="text-align:right">
-          <div>• <span class="monospace">kWh</span> 기준: <span class="muted">거리 ÷ 연비 × 295.9원</span></div>
-          <div>• <span class="monospace">% (명목팩)</span> 기준: <span class="muted">거리 ÷ 연비 → kWh → (÷ 0.774 kWh/%) × 266원</span></div>
-        </div>
-      </div>
-
-      <div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap">
-        <button class="btn" onclick="saveCSV()">CSV 저장</button>
-        <button class="btn" onclick="window.print()">인쇄/저장</button>
-      </div>
-
-      <footer>※ SOC(%)는 명목팩(77.4 kWh) 기준으로 환산합니다. 실제 차량의 표시와는 차이가 있을 수 있어요.</footer>
+      <div class="row"><div>총 예상 주행비</div><div class="result" id="total">0 원</div></div>
     </div>
   </div>
 
 <script>
-const PRICE_PER_KWH = 295.9;           // 원
-const PRICE_PER_PERCENT = 266;         // 원 (관측치)
-const KWH_PER_PERCENT_NOMINAL = 77.4 / 100; // 0.774 kWh/% (명목팩)
+const KWH_PER_PERCENT = 77.4 / 100; // 0.774 kWh/%
 
-function fmt(n, d=0){
-  return Number(n).toLocaleString('ko-KR', { maximumFractionDigits:d, minimumFractionDigits:d });
-}
+function fmt(n, d=0){ return Number(n).toLocaleString('ko-KR',{maximumFractionDigits:d,minimumFractionDigits:d}); }
 
 function calc(){
-  const dist = parseFloat(document.getElementById('distance').value || '0');
-  const eff  = parseFloat(document.getElementById('eff').value || '1');
-  const energy = dist / eff; // kWh
+  const dist = parseFloat(document.getElementById('distance').value||'0');
+  const eff  = parseFloat(document.getElementById('eff').value||'1');
+  const priceKwh = parseFloat(document.getElementById('priceKwh').value||'295.9');
+  const pricePercent = parseFloat(document.getElementById('pricePercent').value||'266');
+  const energy = dist / eff;
+  const percent = energy / KWH_PER_PERCENT;
+
+  const costA = energy * priceKwh;
+  const costB = percent * pricePercent;
+
   const tbody = document.querySelector('#table tbody');
   tbody.innerHTML = '';
+  addRow('kWh 단가 기준', energy, percent, costA);
+  addRow('명목 팩 + 1%요금', energy, percent, costB);
 
-  // A) kWh 단가 기준
-  const costA = energy * PRICE_PER_KWH;
-
-  // B) 명목 팩 + 1%요금(관측치) 기준
-  const percentB = energy / KWH_PER_PERCENT_NOMINAL; // 명목%
-  const costB = percentB * PRICE_PER_PERCENT;
-
-  // 표 표시
-  addRow('kWh 단가 기준', energy, percentB, costA);
-  addRow('명목 팩 + 1%요금', energy, percentB, costB);
-
-  // 대표 값: kWh 단가 기준을 기본 합산으로 표시
-  document.getElementById('total').textContent = fmt(costA, 0) + ' 원';
+  document.getElementById('total').textContent = fmt(costA,0)+' 원';
 }
 
 function addRow(name, energy, percent, cost){
   const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td style="text-align:left">${name}</td>
-    <td>${fmt(energy, 2)} kWh</td>
-    <td>${fmt(percent, 1)} %</td>
-    <td class="hl">${fmt(cost, 0)} 원</td>
-  `;
+  tr.innerHTML = `<td style="text-align:left">${name}</td>
+    <td>${fmt(energy,2)} kWh</td>
+    <td>${fmt(percent,1)} %</td>
+    <td class="hl">${fmt(cost,0)} 원</td>`;
   document.querySelector('#table tbody').appendChild(tr);
-}
-
-function saveCSV(){
-  const dist = parseFloat(document.getElementById('distance').value || '0');
-  const eff  = parseFloat(document.getElementById('eff').value || '1');
-  const energy = dist / eff; // kWh
-  const costA = energy * PRICE_PER_KWH;
-  const percentB = energy / KWH_PER_PERCENT_NOMINAL;
-  const costB = percentB * PRICE_PER_PERCENT;
-  const rows = [
-    ['거리(km)','연비(km/kWh)','소비전력(kWh)','kWh단가(원/kWh)','1%요금(원)','명목kWh/%','kWh기준요금(원)','명목%기준요금(원)'],
-    [dist, eff, energy.toFixed(3), PRICE_PER_KWH, PRICE_PER_PERCENT, KWH_PER_PERCENT_NOMINAL, Math.round(costA), Math.round(costB)]
-  ];
-  const csv = rows.map(r => r.join(',')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'ev_cost_gv60.csv';
-  document.body.appendChild(a);
-  a.click();
-  URL.revokeObjectURL(url);
-  a.remove();
 }
 
 calc();
 </script>
 </body>
 </html>
-``` [❶](code://python)
