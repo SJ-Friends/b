@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>근무일 표 (공휴일 제외, 지난날 X 표기)</title>
+<style>
+  :root{
+    --fg:#0f172a;
+    --muted:#64748b;
+    --line:#e5e7eb;
+    --danger:#ef4444;
+    --bg:#ffffff;
+    --row:#fafafa;
+  }
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,sans-serif;background:var(--bg);color:var(--fg);margin:0;padding:24px}
+  .wrap{max-width:800px;margin:0 auto}
+  h1{margin:0 0 8px;font-size:22px}
+  .desc{margin:0 0 14px;color:var(--muted);font-size:14px}
+  table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  thead th{background:#f8fafc;color:#475569;text-align:left;font-size:13px;padding:10px;border-bottom:1px solid var(--line)}
+  tbody td{padding:10px;border-bottom:1px solid var(--line);font-size:14px}
+  tbody tr:nth-child(even){background:var(--row)}
+  .x{color:var(--danger);font-weight:800}
+  .muted{color:#94a3b8}
+  .count{margin-top:10px;color:#334155;font-size:13px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>근무일 표 (2025-09-22 ~ 2025-10-24)</h1>
+    <p class="desc">월~금만 포함, 공휴일 제외. 지난날(<b>오늘 포함</b>)은 <span class="x">X</span> 표기.</p>
+
+    <table id="workTable" role="table" aria-label="근무일 표">
+      <thead>
+        <tr>
+          <th style="width:70px">번호</th>
+          <th style="width:120px">날짜</th>
+          <th style="width:80px">요일</th>
+          <th>상태</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="count" id="summary"></div>
+  </div>
+
+<script>
+(function(){
+  // ===== 설정 =====
+  const RANGE_START = new Date('2025-09-22'); // 포함
+  const RANGE_END   = new Date('2025-10-24'); // 포함
+  const todayKST = new Date('2025-09-23T00:00:00+09:00'); // 오늘 포함 X표기
+
+  // 공휴일(평일) 목록
+  const HOLIDAYS = new Set([
+    '2025-10-03','2025-10-06','2025-10-07','2025-10-08','2025-10-09'
+  ]);
+
+  // 유틸
+  const pad2 = (n)=> String(n).padStart(2,'0');
+  const fmt = (d)=> `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  const dayNames = ['일','월','화','수','목','금','토'];
+  const isWeekday = (d)=> d.getDay()>=1 && d.getDay()<=5;
+  const toMidnight = (d)=> new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const cmpBase = toMidnight(todayKST);
+
+  // 데이터 생성
+  const rows = [];
+  for (let d=new Date(RANGE_START); d<=RANGE_END; d.setDate(d.getDate()+1)) {
+    const copy = new Date(d);
+    if (!isWeekday(copy)) continue;
+    if (HOLIDAYS.has(fmt(copy))) continue;
+    rows.push(copy);
+  }
+
+  // 렌더
+  const tbody = document.querySelector('#workTable tbody');
+  let pastCount=0;
+  rows.forEach((d,i)=>{
+    const tr=document.createElement('tr');
+    const numTd=document.createElement('td');
+    const dateTd=document.createElement('td');
+    const dayTd=document.createElement('td');
+    const statusTd=document.createElement('td');
+
+    numTd.textContent=i+1;
+    dateTd.textContent=fmt(d);
+    dayTd.textContent=dayNames[d.getDay()];
+
+    const isPastOrToday = toMidnight(d).getTime()<=cmpBase.getTime();
+    if (isPastOrToday){
+      statusTd.innerHTML='<span class="x">X</span>';
+      pastCount++;
+    } else {
+      statusTd.innerHTML='<span class="muted">—</span>';
+    }
+
+    tr.appendChild(numTd);
+    tr.appendChild(dateTd);
+    tr.appendChild(dayTd);
+    tr.appendChild(statusTd);
+    tbody.appendChild(tr);
+  });
+
+  // 요약
+  document.getElementById('summary').textContent=
+    `총 근무일: ${rows.length}일 · 지난날(오늘 포함): ${pastCount}일 · 남은 날: ${rows.length-pastCount}일`;
+})();
+</script>
+</body>
+</html>
