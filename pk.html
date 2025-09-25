@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>주차요금계산기</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --text:#1d2230; --muted:#697089; --card:#ffffff; --line:#e8eaf2;
+    --pri:#2d6df6; --pri-press:#1e55c9; --warn:#ff7043; --ok:#10b981;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,Apple SD Gothic Neo,Malgun Gothic,sans-serif}
+  .wrap{max-width:860px;margin:0 auto;padding:14px 16px 28px}
+  h1{font-size:20px;margin:8px 2px 4px}
+  .lead{font-size:14px;color:var(--muted);margin:0 2px 12px;line-height:1.5}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(14,24,56,.04)}
+  .card + .card{margin-top:14px}
+
+  .grid{display:grid;grid-template-columns:1fr;gap:10px}
+  @media(min-width:560px){ .grid.two{grid-template-columns:1fr 1fr} }
+
+  label{display:block;font-size:12px;color:var(--muted);margin:2px 0 6px}
+  input[type="time"],
+  input[type="number"],
+  input[type="text"]{
+    width:100%;font-size:16px;
+    padding:12px 12px;border:1px solid var(--line);border-radius:12px;background:#fbfcff;color:var(--text);
+    -webkit-appearance:none;appearance:none;outline:none
+  }
+  input:focus{border-color:#b9ccff;box-shadow:0 0 0 4px rgba(45,109,246,.12)}
+  .row{display:grid;grid-template-columns:1fr;gap:10px}
+  @media(min-width:560px){ .row.two{grid-template-columns:1fr 1fr} }
+
+  .btns{display:grid;grid-template-columns:1fr;gap:10px;margin-top:6px}
+  @media(min-width:560px){ .btns{grid-template-columns:1fr 1fr} }
+  button{
+    width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--line);cursor:pointer;font-size:16px
+  }
+  .primary{background:var(--pri);border:none;color:#fff}
+  .primary:active{background:var(--pri-press)}
+  .ghost{background:#fff}
+  .warn{background:#fff4f0;border:1px solid #ffd4c6;color:#9a3f1e}
+  .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;background:#f0f3ff;border:1px solid #dfe6ff;color:#2b3a6b;font-size:12px}
+
+  .big{font-weight:700;font-size:22px}
+  .muted{color:var(--muted)}
+  .table{width:100%;border-collapse:collapse;margin-top:6px;font-size:14px}
+  .table th,.table td{padding:10px;border-bottom:1px dashed var(--line);text-align:left}
+  .k{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+  .hint{font-size:12px;color:var(--muted);margin-top:6px}
+  .row-inline{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .switch{display:flex;align-items:center;gap:6px;font-size:13px}
+  .switch input{width:20px;height:20px}
+
+  .safe{padding-bottom:env(safe-area-inset-bottom)}
+</style>
+</head>
+<body>
+<div class="wrap safe">
+  <h1>주차요금 계산기</h1>
+  <p class="lead">시작 시간을 입력하면 <b>현재시간</b>과 비교해 <span id="intervalLabel" class="k">10분</span>당 <span id="rateLabel" class="k">100원</span>으로 계산합니다. 남은 시간은 <b>올림</b> 처리!</p>
+
+  <!-- 입력 카드 -->
+  <section class="card">
+    <div class="grid two">
+      <div>
+        <label for="start">시작 시간</label>
+        <input id="start" type="time" step="60" inputmode="numeric" autocomplete="off" />
+        <div class="hint">지금으로 채우기: <button id="nowFill" class="ghost" style="padding:6px 10px;border-radius:10px">지금</button></div>
+      </div>
+      <div>
+        <label for="now">현재 시간 (자동)</label>
+        <input id="now" type="text" readonly />
+        <div class="hint">1초마다 갱신 • 필요 시 아래 <span class="k">실시간</span>을 끄세요</div>
+      </div>
+    </div>
+
+    <div class="row two" style="margin-top:8px">
+      <div>
+        <label for="intervalMin">과금 단위(분)</label>
+        <input id="intervalMin" type="number" value="10" min="1" inputmode="numeric" />
+      </div>
+      <div>
+        <label for="rate">단위당 요금(원)</label>
+        <input id="rate" type="number" value="100" min="0" step="10" inputmode="numeric" />
+      </div>
+    </div>
+
+    <div class="row-inline" style="margin-top:10px">
+      <label class="switch"><input id="live" type="checkbox" checked> 실시간 계산</label>
+      <label class="switch"><input id="overnight" type="checkbox" checked> 자정 넘김 자동 보정</label>
+    </div>
+
+    <div class="btns">
+      <button class="primary" id="calcBtn">계산하기</button>
+      <button class="ghost" id="copyBtn">결과 복사</button>
+      <button class="warn" id="resetBtn">초기화</button>
+    </div>
+  </section>
+
+  <!-- 결과 카드 -->
+  <section class="card">
+    <div class="row-inline" style="justify-content:space-between">
+      <div class="big" id="totalFee">총 요금: ₩0</div>
+      <div class="pill">총 경과 <b id="elapsedHM">00:00:00</b></div>
+    </div>
+    <div class="pill" style="margin-top:8px">청구 단위 <b id="unitInfo" class="k">10분 × 100원</b></div>
+
+    <table class="table" aria-label="세부 계산 내역">
+      <tbody>
+        <tr><th>경과 분(총)</th><td id="elapsedMin">0분</td></tr>
+        <tr><th>과금 단위(분)</th><td id="unitMin">10분</td></tr>
+        <tr><th>청구 블록</th><td id="blocks">0 블록</td></tr>
+        <tr><th>단가(원/블록)</th><td id="unitPrice">₩100</td></tr>
+        <tr><th>남은 분(올림 사유)</th><td id="remainder">0분</td></tr>
+        <tr><th>계산식</th><td id="formula" class="k">—</td></tr>
+      </tbody>
+    </table>
+
+    <p class="hint" id="warning" style="display:none;color:#c05621">⚠️ 시작 시간이 현재보다 미래입니다. (자정 보정 OFF 상태)</p>
+  </section>
+</div>
+
+<script>
+(function(){
+  const $ = (s)=>document.querySelector(s);
+
+  const startEl = $('#start');
+  const nowEl = $('#now');
+  const intervalEl = $('#intervalMin');
+  const rateEl = $('#rate');
+  const liveEl = $('#live');
+  const overnightEl = $('#overnight');
+
+  const totalFeeEl = $('#totalFee');
+  const elapsedHMEl = $('#elapsedHM');
+  const unitInfoEl = $('#unitInfo');
+  const elapsedMinEl = $('#elapsedMin');
+  const unitMinEl = $('#unitMin');
+  const blocksEl = $('#blocks');
+  const unitPriceEl = $('#unitPrice');
+  const remainderEl = $('#remainder');
+  const formulaEl = $('#formula');
+  const warningEl = $('#warning');
+
+  const nowFillBtn = $('#nowFill');
+  const calcBtn = $('#calcBtn');
+  const copyBtn = $('#copyBtn');
+  const resetBtn = $('#resetBtn');
+
+  const rateLabel = $('#rateLabel');
+  const intervalLabel = $('#intervalLabel');
+
+  let timer=null;
+
+  function pad(n){return n.toString().padStart(2,'0');}
+  function fmtKRW(n){return '₩'+(n||0).toLocaleString('ko-KR');}
+  function fmtHMS(s){
+    const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=Math.floor(s%60);
+    return `${pad(h)}:${pad(m)}:${pad(sec)}`;
+  }
+
+  function setNow(){
+    const now=new Date();
+    nowEl.value = now.toLocaleTimeString('ko-KR');
+    return now;
+  }
+
+  function getStartDateFromTime(now){
+    const v = startEl.value;
+    if(!v) return null;
+    const [h,m]=v.split(':').map(Number);
+    const d = new Date(now);
+    d.setHours(h, m||0, 0, 0);
+    return d;
+  }
+
+  function recalc(){
+    const now = setNow();
+
+    const interval = Math.max(1, parseInt(intervalEl.value||'10',10));
+    const rate = Math.max(0, parseInt(rateEl.value||'100',10));
+    unitInfoEl.textContent = `${interval}분 × ${rate.toLocaleString('ko-KR')}원`;
+    intervalLabel.textContent = `${interval}분`;
+    rateLabel.textContent = `${rate.toLocaleString('ko-KR')}원`;
+
+    const start = getStartDateFromTime(now);
+
+    let diffMs = 0;
+    let future = false;
+
+    if(start){
+      diffMs = now - start;
+      if(diffMs < 0){
+        if(overnightEl.checked){
+          diffMs += 24*60*60*1000;
+          future = false;
+        }else{
+          future = true;
+        }
+      }
+    }
+
+    warningEl.style.display = future ? 'block' : 'none';
+
+    const totalMinutes = Math.ceil(Math.max(0,diffMs)/60000);
+    const blocks = Math.ceil(totalMinutes/interval);
+    const fee = blocks*rate;
+    const secondsExact = Math.ceil(Math.max(0,diffMs)/1000);
+    const remainder = totalMinutes % interval;
+
+    totalFeeEl.textContent = `총 요금: ${fmtKRW(fee)}`;
+    elapsedHMEl.textContent = fmtHMS(secondsExact);
+    elapsedMinEl.textContent = `${totalMinutes}분`;
+    unitMinEl.textContent = `${interval}분`;
+    blocksEl.textContent = `${blocks} 블록`;
+    unitPriceEl.textContent = fmtKRW(rate);
+    remainderEl.textContent = `${remainder}분`;
+
+    const floorBlocks = Math.floor(totalMinutes/interval);
+    formulaEl.textContent = `${totalMinutes}분 ÷ ${interval}분 = ${floorBlocks}… → 올림 ${blocks} × ${rate.toLocaleString('ko-KR')} = ${fee.toLocaleString('ko-KR')}`;
+  }
+
+  function startTimer(){
+    if(timer) clearInterval(timer);
+    timer = setInterval(()=>{ if(liveEl.checked) recalc(); }, 1000);
+  }
+
+  // -----------------------------
+  // 🔸 LocalStorage (start time)
+  // -----------------------------
+  const STORAGE_KEY_START = 'feeCalc:startTime';
+
+  function saveStartTime(value){
+    try{ localStorage.setItem(STORAGE_KEY_START, value); }catch(e){}
+  }
+  function loadStartTime(){
+    try{ return localStorage.getItem(STORAGE_KEY_START); }catch(e){ return null; }
+  }
+  function clearStartTime(){
+    try{ localStorage.removeItem(STORAGE_KEY_START); }catch(e){}
+  }
+  // -----------------------------
+
+  // 이벤트 바인딩
+  ['input','change'].forEach(evt=>{
+    // 시작시간 변경 시 저장 + 재계산
+    startEl.addEventListener(evt, ()=>{
+      if(startEl.value) saveStartTime(startEl.value);     // 🔸 저장
+      recalc();
+    });
+    intervalEl.addEventListener(evt, recalc);
+    rateEl.addEventListener(evt, recalc);
+    liveEl.addEventListener(evt, recalc);
+    overnightEl.addEventListener(evt, recalc);
+  });
+  calcBtn.addEventListener('click', recalc);
+
+  nowFillBtn.addEventListener('click', ()=>{
+    const n=new Date();
+    const v = `${pad(n.getHours())}:${pad(n.getMinutes())}`;
+    startEl.value = v;
+    saveStartTime(v);                                      // 🔸 지금 버튼으로 채울 때도 저장
+    recalc();
+  });
+
+  copyBtn.addEventListener('click', async ()=>{
+    const text = [
+      totalFeeEl.textContent,
+      `총 경과: ${elapsedHMEl.textContent}`,
+      `경과 분: ${elapsedMinEl.textContent}`,
+      `과금 단위: ${unitMinEl.textContent}`,
+      `청구 블록: ${blocksEl.textContent}`,
+      `단가: ${unitPriceEl.textContent}`,
+      `남은 분(올림 사유): ${remainderEl.textContent}`,
+      `계산식: ${$('#formula').textContent}`
+    ].join('\n');
+    try{ await navigator.clipboard.writeText(text); copyBtn.textContent='복사됨!'; setTimeout(()=>copyBtn.textContent='결과 복사',1200); }
+    catch(e){ alert('복사 권한을 허용해주세요.'); }
+  });
+
+  resetBtn.addEventListener('click', ()=>{
+    startEl.value='';
+    clearStartTime();                                      // 🔸 초기화 시 저장값도 삭제
+    intervalEl.value=10;
+    rateEl.value=100;
+    recalc();
+  });
+
+  // 페이지 비가시성일 때 타이머 절전
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.hidden){ if(timer) clearInterval(timer); }
+    else{ startTimer(); recalc(); }
+  });
+
+  // 초기 실행
+  // 🔸 저장된 시작시간 복원
+  const savedStart = loadStartTime();
+  if(savedStart){ startEl.value = savedStart; }
+  recalc();
+  startTimer();
+})();
+</script>
+</body>
+</html>
