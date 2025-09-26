@@ -61,7 +61,12 @@
 <body>
 <div class="wrap safe">
   <h1>주차요금 계산기</h1>
-  <p class="lead">시작 시간을 입력하면 <b>현재시간</b>과 비교해 <span id="intervalLabel" class="k">10분</span>당 <span id="rateLabel" class="k">100원</span>으로 계산합니다. 남은 시간은 <b>올림</b> 처리!(최대 2,350 / 4,700원)</p>
+  <p class="lead">
+    시작 시간을 입력하면 <b>현재시간</b>과 비교해
+    <span id="intervalLabel" class="k">10분</span>당
+    <span id="rateLabel" class="k">100원</span>으로 계산합니다.
+    남은 시간은 <b>올림</b> 처리! (일일 상한: 할인 2,350원 / 일반 4,700원)
+  </p>
 
   <!-- 입력 카드 -->
   <section class="card">
@@ -92,6 +97,8 @@
     <div class="row-inline" style="margin-top:10px">
       <label class="switch"><input id="live" type="checkbox" checked> 실시간 계산</label>
       <label class="switch"><input id="overnight" type="checkbox" checked> 자정 넘김 자동 보정</label>
+      <label class="switch"><input id="ev" type="checkbox" checked> 전기차 할인 적용(100원/10분)</label>
+      <label class="switch"><input id="exclude9" type="checkbox" checked> 오전 9시 이전 시간 제외</label>
     </div>
 
     <div class="btns">
@@ -109,11 +116,17 @@
     </div>
     <div class="pill" style="margin-top:8px">청구 단위 <b id="unitInfo" class="k">10분 × 100원</b></div>
 
+    <div class="hint" style="margin-top:8px">
+      <div>전기차 할인 요금(상한 2,350원): <b id="evFee" class="k">₩0</b></div>
+      <div>일반 요금(상한 4,700원): <b id="stdFee" class="k">₩0</b></div>
+    </div>
+
     <table class="table" aria-label="세부 계산 내역">
       <tbody>
         <tr><th>경과 분(총)</th><td id="elapsedMin">0분</td></tr>
+        <tr><th>과금 대상 분(9시 이전 제외 적용)</th><td id="billedMin">0분</td></tr>
         <tr><th>과금 단위(분)</th><td id="unitMin">10분</td></tr>
-        <tr><th>청구 블록</th><td id="blocks">0 블록</td></tr>
+        <tr><th>청구 블록(적용 요금제 기준)</th><td id="blocks">0 블록</td></tr>
         <tr><th>단가(원/블록)</th><td id="unitPrice">₩100</td></tr>
         <tr><th>남은 분(올림 사유)</th><td id="remainder">0분</td></tr>
         <tr><th>계산식</th><td id="formula" class="k">—</td></tr>
@@ -134,17 +147,22 @@
   const rateEl = $('#rate');
   const liveEl = $('#live');
   const overnightEl = $('#overnight');
+  const evEl = $('#ev');
+  const exclude9El = $('#exclude9');
 
   const totalFeeEl = $('#totalFee');
   const elapsedHMEl = $('#elapsedHM');
   const unitInfoEl = $('#unitInfo');
   const elapsedMinEl = $('#elapsedMin');
+  const billedMinEl = $('#billedMin');
   const unitMinEl = $('#unitMin');
   const blocksEl = $('#blocks');
   const unitPriceEl = $('#unitPrice');
   const remainderEl = $('#remainder');
   const formulaEl = $('#formula');
   const warningEl = $('#warning');
+  const evFeeEl = $('#evFee');
+  const stdFeeEl = $('#stdFee');
 
   const nowFillBtn = $('#nowFill');
   const calcBtn = $('#calcBtn');
@@ -178,26 +196,76 @@
     return d;
   }
 
+  // 도우미: 하루 시작/끝 및 09:00
+  function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
+  function endOfDay(d){ const x=new Date(d); x.setHours(23,59,59,999); return x; }
+  function nineAM(d){ const x=new Date(d); x.setHours(9,0,0,0); return x; }
+
+  // 일일 상한/09시 제외/자정 분리계산
+  // 반환: { fee, blocks, billedMinutes }
+  function computeCappedFeeByDays(start, end, intervalMin, ratePerBlock, capPerDay, excludeBefore9){
+    if(!start || !end || end <= start) return {fee:0, blocks:0, billedMinutes:0};
+    let cur = new Date(start);
+    let totalFee = 0;
+    let totalBlocks = 0;
+    let totalBilledMin = 0;
+
+    while(cur < end){
+      const dayEnd = endOfDay(cur);
+      const segEnd = end < dayEnd ? end : dayEnd;
+
+      // 과금 대상 구간 결정
+      let segStart = new Date(cur);
+      if(excludeBefore9){
+        const n9 = nineAM(cur);
+        if(segEnd <= n9){
+          // 전부 9시 이전 -> 과금 0
+          cur = new Date(dayEnd.getTime() + 1); cur.setHours(0,0,0,0);
+          continue;
+        }
+        if(segStart < n9) segStart = n9;
+      }
+
+      const minutes = Math.ceil((segEnd - segStart) / 60000); // 초라도 지나면 1분
+      const dayBlocks = Math.ceil(Math.max(0, minutes) / intervalMin);
+      const dayFee = Math.min(dayBlocks * ratePerBlock, capPerDay);
+
+      totalBilledMin += Math.max(0, minutes);
+      totalBlocks += dayBlocks;
+      totalFee += dayFee;
+
+      // 다음날 00:00:00
+      const nextDay = new Date(dayEnd.getTime() + 1);
+      nextDay.setHours(0,0,0,0);
+      cur = nextDay;
+    }
+    return {fee: totalFee, blocks: totalBlocks, billedMinutes: totalBilledMin};
+  }
+
   function recalc(){
     const now = setNow();
 
     const interval = Math.max(1, parseInt(intervalEl.value||'10',10));
-    const rate = Math.max(0, parseInt(rateEl.value||'100',10));
+    // EV 토글에 맞춰 표시 단가 동기화(사용자가 수동 변경해도 계산엔 입력값을 사용)
+    if (evEl.checked && rateEl.value !== '100') rateEl.value = 100;
+    if (!evEl.checked && rateEl.value !== '200') rateEl.value = 200;
+
+    const rate = Math.max(0, parseInt(rateEl.value|| (evEl.checked? '100':'200'),10));
+
+    if(intervalLabel) intervalLabel.textContent = `${interval}분`;
+    if(rateLabel) rateLabel.textContent = `${rate.toLocaleString('ko-KR')}원`;
     unitInfoEl.textContent = `${interval}분 × ${rate.toLocaleString('ko-KR')}원`;
-    intervalLabel.textContent = `${interval}분`;
-    rateLabel.textContent = `${rate.toLocaleString('ko-KR')}원`;
 
     const start = getStartDateFromTime(now);
 
-    let diffMs = 0;
+    let end = new Date(now);
     let future = false;
 
     if(start){
-      diffMs = now - start;
-      if(diffMs < 0){
+      if(end - start < 0){
         if(overnightEl.checked){
-          diffMs += 24*60*60*1000;
-          future = false;
+          // 다음날로 이어진 경우: end를 +24h 해석
+          end = new Date(end.getTime() + 24*60*60*1000);
         }else{
           future = true;
         }
@@ -206,22 +274,40 @@
 
     warningEl.style.display = future ? 'block' : 'none';
 
-    const totalMinutes = Math.ceil(Math.max(0,diffMs)/60000);
-    const blocks = Math.ceil(totalMinutes/interval);
-    const fee = blocks*rate;
-    const secondsExact = Math.ceil(Math.max(0,diffMs)/1000);
-    const remainder = totalMinutes % interval;
-
-    totalFeeEl.textContent = `총 요금: ${fmtKRW(fee)}`;
+    // 총 경과(설명용)
+    const diffMs = Math.max(0, (start ? (end - start) : 0));
+    const totalMinutes = Math.ceil(diffMs / 60000);
+    const secondsExact = Math.ceil(diffMs / 1000);
     elapsedHMEl.textContent = fmtHMS(secondsExact);
     elapsedMinEl.textContent = `${totalMinutes}분`;
+
+    // EV/STD 모두 계산 (일일 상한 + 9시 제외 적용)
+    const EV_RATE = 100, EV_CAP = 2350;
+    const STD_RATE = 200, STD_CAP = 4700;
+    const excludeBefore9 = !!exclude9El.checked;
+
+    const evRes  = computeCappedFeeByDays(start, end, interval, EV_RATE,  EV_CAP,  excludeBefore9);
+    const stdRes = computeCappedFeeByDays(start, end, interval, STD_RATE, STD_CAP, excludeBefore9);
+
+    // 화면 표시는 "선택된 요금제" 기준
+    const applied = evEl.checked ? evRes : stdRes;
+
+    // 과금 대상 분(9시 제외 반영)
+    billedMinEl.textContent = `${applied.billedMinutes}분`;
+
+    // 블록/잔여/계산식(설명용) — 여기선 '총 경과 분' 기준으로 표기 + 상한 별도
+    const remainder = totalMinutes % interval;
     unitMinEl.textContent = `${interval}분`;
-    blocksEl.textContent = `${blocks} 블록`;
+    blocksEl.textContent = `${applied.blocks} 블록`; // 일일 구간별 합산 블록(상한과 무관한 참고치)
     unitPriceEl.textContent = fmtKRW(rate);
     remainderEl.textContent = `${remainder}분`;
-
     const floorBlocks = Math.floor(totalMinutes/interval);
-    formulaEl.textContent = `${totalMinutes}분 ÷ ${interval}분 = ${floorBlocks}… → 올림 ${blocks} × ${rate.toLocaleString('ko-KR')} = ${fee.toLocaleString('ko-KR')}`;
+    formulaEl.textContent = `${totalMinutes}분 ÷ ${interval}분 = ${floorBlocks}… → 올림 ${Math.ceil(totalMinutes/interval)} × ${rate.toLocaleString('ko-KR')} = ${(Math.ceil(totalMinutes/interval)*rate).toLocaleString('ko-KR')} (일일 상한 및 9시 제외는 별도 반영)`;
+
+    // 결과 반영
+    totalFeeEl.textContent = `총 요금: ${fmtKRW(applied.fee)} ${evEl.checked ? '(전기차 할인 적용)' : '(일반 요금 적용)'}`;
+    evFeeEl.textContent  = fmtKRW(evRes.fee);
+    stdFeeEl.textContent = fmtKRW(stdRes.fee);
   }
 
   function startTimer(){
@@ -229,42 +315,27 @@
     timer = setInterval(()=>{ if(liveEl.checked) recalc(); }, 1000);
   }
 
-  // -----------------------------
-  // 🔸 LocalStorage (start time)
-  // -----------------------------
+  // LocalStorage (시작시간만 저장)
   const STORAGE_KEY_START = 'feeCalc:startTime';
+  function saveStartTime(v){ try{ localStorage.setItem(STORAGE_KEY_START, v);}catch(e){} }
+  function loadStartTime(){ try{ return localStorage.getItem(STORAGE_KEY_START);}catch(e){return null;} }
+  function clearStartTime(){ try{ localStorage.removeItem(STORAGE_KEY_START);}catch(e){} }
 
-  function saveStartTime(value){
-    try{ localStorage.setItem(STORAGE_KEY_START, value); }catch(e){}
-  }
-  function loadStartTime(){
-    try{ return localStorage.getItem(STORAGE_KEY_START); }catch(e){ return null; }
-  }
-  function clearStartTime(){
-    try{ localStorage.removeItem(STORAGE_KEY_START); }catch(e){}
-  }
-  // -----------------------------
-
-  // 이벤트 바인딩
+  // 이벤트
   ['input','change'].forEach(evt=>{
-    // 시작시간 변경 시 저장 + 재계산
-    startEl.addEventListener(evt, ()=>{
-      if(startEl.value) saveStartTime(startEl.value);     // 🔸 저장
-      recalc();
-    });
+    startEl.addEventListener(evt, ()=>{ if(startEl.value) saveStartTime(startEl.value); recalc(); });
     intervalEl.addEventListener(evt, recalc);
     rateEl.addEventListener(evt, recalc);
     liveEl.addEventListener(evt, recalc);
     overnightEl.addEventListener(evt, recalc);
+    evEl.addEventListener(evt, recalc);
+    exclude9El.addEventListener(evt, recalc);
   });
-  calcBtn.addEventListener('click', recalc);
 
   nowFillBtn.addEventListener('click', ()=>{
     const n=new Date();
     const v = `${pad(n.getHours())}:${pad(n.getMinutes())}`;
-    startEl.value = v;
-    saveStartTime(v);                                      // 🔸 지금 버튼으로 채울 때도 저장
-    recalc();
+    startEl.value = v; saveStartTime(v); recalc();
   });
 
   copyBtn.addEventListener('click', async ()=>{
@@ -272,38 +343,40 @@
       totalFeeEl.textContent,
       `총 경과: ${elapsedHMEl.textContent}`,
       `경과 분: ${elapsedMinEl.textContent}`,
+      `과금 대상 분(9시 제외 적용): ${billedMinEl.textContent}`,
       `과금 단위: ${unitMinEl.textContent}`,
-      `청구 블록: ${blocksEl.textContent}`,
+      `청구 블록(적용 요금제): ${blocksEl.textContent}`,
       `단가: ${unitPriceEl.textContent}`,
       `남은 분(올림 사유): ${remainderEl.textContent}`,
-      `계산식: ${$('#formula').textContent}`
+      `전기차 할인 요금: ${evFeeEl.textContent}`,
+      `일반 요금: ${stdFeeEl.textContent}`,
+      `계산식(설명용): ${document.getElementById('formula').textContent}`
     ].join('\n');
     try{ await navigator.clipboard.writeText(text); copyBtn.textContent='복사됨!'; setTimeout(()=>copyBtn.textContent='결과 복사',1200); }
     catch(e){ alert('복사 권한을 허용해주세요.'); }
   });
 
   resetBtn.addEventListener('click', ()=>{
-    startEl.value='';
-    clearStartTime();                                      // 🔸 초기화 시 저장값도 삭제
+    startEl.value=''; clearStartTime();
     intervalEl.value=10;
-    rateEl.value=100;
+    evEl.checked = true; rateEl.value=100; // 기본 전기차 할인
+    exclude9El.checked = true;             // 9시 이전 제외 기본 ON
     recalc();
   });
 
-  // 페이지 비가시성일 때 타이머 절전
   document.addEventListener('visibilitychange', ()=>{
     if(document.hidden){ if(timer) clearInterval(timer); }
     else{ startTimer(); recalc(); }
   });
 
   // 초기 실행
-  // 🔸 저장된 시작시간 복원
   const savedStart = loadStartTime();
   if(savedStart){ startEl.value = savedStart; }
+  evEl.checked = true; rateEl.value = 100;
+  exclude9El.checked = true;
   recalc();
   startTimer();
 })();
 </script>
 </body>
 </html>
-
