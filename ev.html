@@ -26,6 +26,9 @@
   .row{display:flex; justify-content:space-between; padding:10px 12px; border-bottom:1px dashed var(--border)}
   .row:last-child{border-bottom:0}
   .result{font-size:22px; font-weight:800}
+  .btns{display:flex; gap:10px; margin:12px 0 0}
+  .btn{background:#0b1430; border:1px solid var(--border); color:var(--text); padding:10px 14px; border-radius:12px; cursor:pointer}
+  .btn.primary{background:linear-gradient(180deg,#3b6cff,#2958de); border:none}
 </style>
 </head>
 <body>
@@ -37,20 +40,22 @@
       <div class="grid">
         <div>
           <label for="distance">주행 거리</label>
-          <div class="input"><input id="distance" type="number" min="0" step="0.1" value="5.1" oninput="calc()"><span class="suffix">km</span></div>
+          <div class="input"><input id="distance" type="number" min="0" step="0.1" value="50" oninput="calc()"><span class="suffix">km</span></div>
         </div>
         <div>
           <label for="eff">연비(효율)</label>
-          <div class="input"><input id="eff" type="number" min="0.1" step="0.1" value="6.5" oninput="calc()"><span class="suffix">km/kWh</span></div>
+          <div class="input"><input id="eff" type="number" min="0.1" step="0.1" value="5.0" oninput="calc()"><span class="suffix">km/kWh</span></div>
         </div>
         <div>
           <label for="priceKwh">단가</label>
           <div class="input"><input id="priceKwh" type="number" min="0" step="0.1" value="295.9" oninput="calc()"><span class="suffix">원/kWh</span></div>
         </div>
-        <div>
-          <label for="pricePercent">1% 요금(관측치)</label>
-          <div class="input"><input id="pricePercent" type="number" min="0" step="1" value="266" oninput="calc()"><span class="suffix">원</span></div>
-        </div>
+      </div>
+
+      <div class="btns">
+        <button class="btn" id="saveBtn" onclick="saveInputs()">입력 저장</button>
+        <button class="btn" id="loadBtn" onclick="loadInputs(true)">저장 불러오기</button>
+        <button class="btn primary" id="resetBtn" onclick="resetInputs()">초기화</button>
       </div>
 
       <table class="table" id="table">
@@ -61,42 +66,85 @@
       </table>
 
       <div class="row"><div>총 예상 주행비</div><div class="result" id="total">0 원</div></div>
+      <div class="row"><div>40% 할인 적용 시</div><div class="result" id="discounted">0 원</div></div>
     </div>
   </div>
 
 <script>
-const KWH_PER_PERCENT = 77.4 / 100; // 0.774 kWh/%
+const KWH_PER_PERCENT = 77.4 / 100; // 0.774 kWh/% (GV60 77.4kWh)
+const LS_KEY = 'evcalc:gv60:v2';
 
-function fmt(n, d=0){ return Number(n).toLocaleString('ko-KR',{maximumFractionDigits:d,minimumFractionDigits:d}); }
+function fmt(n, d=0){
+  const num = Number.isFinite(+n) ? +n : 0;
+  return num.toLocaleString('ko-KR',{maximumFractionDigits:d,minimumFractionDigits:d});
+}
+
+function getInputs(){
+  return {
+    dist: parseFloat(document.getElementById('distance').value||'0'),
+    eff: parseFloat(document.getElementById('eff').value||'1'),
+    priceKwh: parseFloat(document.getElementById('priceKwh').value||'0'),
+  };
+}
+
+function setInputs({dist, eff, priceKwh}){
+  if(dist !== undefined) document.getElementById('distance').value = dist;
+  if(eff !== undefined) document.getElementById('eff').value = eff;
+  if(priceKwh !== undefined) document.getElementById('priceKwh').value = priceKwh;
+}
+
+function saveInputs(){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify(getInputs()));
+    document.getElementById('saveBtn').textContent='저장됨';
+    setTimeout(()=>document.getElementById('saveBtn').textContent='입력 저장',1200);
+  }catch(e){}
+}
+
+function loadInputs(showToast=false){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return;
+    setInputs(JSON.parse(raw));
+    if(showToast){
+      document.getElementById('loadBtn').textContent='불러옴';
+      setTimeout(()=>document.getElementById('loadBtn').textContent='저장 불러오기',1200);
+    }
+    calc();
+  }catch(e){}
+}
+
+function resetInputs(){
+  setInputs({dist:5.1, eff:6, priceKwh:296});
+  calc();
+}
 
 function calc(){
-  const dist = parseFloat(document.getElementById('distance').value||'0');
-  const eff  = parseFloat(document.getElementById('eff').value||'1');
-  const priceKwh = parseFloat(document.getElementById('priceKwh').value||'295.9');
-  const pricePercent = parseFloat(document.getElementById('pricePercent').value||'266');
-  const energy = dist / eff;
-  const percent = energy / KWH_PER_PERCENT;
+  const {dist, eff, priceKwh} = getInputs();
+  const safeEff = eff>0?eff:1;
+  const energy = dist/safeEff;
+  const percent = energy/KWH_PER_PERCENT;
+  const cost = energy*priceKwh;
 
-  const costA = energy * priceKwh;
-  const costB = percent * pricePercent;
+  const tbody=document.querySelector('#table tbody');
+  tbody.innerHTML='';
+  addRow('kWh 단가 기준', energy, percent, cost);
 
-  const tbody = document.querySelector('#table tbody');
-  tbody.innerHTML = '';
-  addRow('kWh 단가 기준', energy, percent, costA);
-  addRow('명목 팩 + 1%요금', energy, percent, costB);
-
-  document.getElementById('total').textContent = fmt(costA,0)+' 원';
+  document.getElementById('total').textContent=fmt(cost,0)+' 원';
+  document.getElementById('discounted').textContent=fmt(cost*0.6,0)+' 원';
+  saveInputs();
 }
 
 function addRow(name, energy, percent, cost){
-  const tr = document.createElement('tr');
-  tr.innerHTML = `<td style="text-align:left">${name}</td>
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td style="text-align:left">${name}</td>
     <td>${fmt(energy,2)} kWh</td>
     <td>${fmt(percent,1)} %</td>
     <td class="hl">${fmt(cost,0)} 원</td>`;
   document.querySelector('#table tbody').appendChild(tr);
 }
 
+loadInputs(false);
 calc();
 </script>
 </body>
