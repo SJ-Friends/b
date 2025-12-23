@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>수빈 일정표 · 모바일</title>
+<style>
+:root {
+  --bg:#0b0d12; --card:#121725; --muted:#9aa4b2; --text:#e9eef5;
+  --line:#253046; --accent:#6ee7ff; --accent2:#a78bfa; --warn:#ffdf6e;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Malgun Gothic,sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:520px;margin:0 auto;padding:16px 14px 24px}
+.header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.badge{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#041018}
+h1{font-size:18px;margin:0;letter-spacing:-.2px}
+.sub{margin:2px 0 0;color:var(--muted);font-size:12.5px;line-height:1.35}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pill{border:1px solid var(--line);background:rgba(255,255,255,.02);padding:8px 10px;border-radius:999px;color:var(--text);font-size:12.5px}
+.pill strong{font-weight:700}
+.toggle{display:flex;gap:8px;margin-top:10px}
+.btn{flex:1;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--text);padding:10px 12px;border-radius:12px;font-weight:700}
+.btn.active{border-color:rgba(110,231,255,.55);box-shadow:0 0 0 2px rgba(110,231,255,.12) inset}
+.section{margin-top:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 12px}
+.cardTitle{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.cardTitle b{font-size:13px}
+.tag{font-size:11.5px;color:var(--muted)}
+.mainPlan{font-size:15px;font-weight:800;letter-spacing:-.2px;line-height:1.25;margin:2px 0 4px}
+.times{display:flex;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+.timeK{border-left:3px solid var(--accent);padding-left:8px}
+.timeL{border-left:3px solid var(--accent2);padding-left:8px}
+.grid3{display:grid;grid-template-columns:1fr;gap:10px}
+@media (min-width:460px){.grid3{grid-template-columns:1fr 1fr 1fr}}
+.searchbox{display:flex;gap:8px;align-items:center}
+input[type="search"]{flex:1;background:rgba(255,255,255,.03);border:1px solid var(--line);color:var(--text);padding:11px 12px;border-radius:12px;font-size:14px;outline:none}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.chip{border:1px solid var(--line);background:rgba(255,255,255,.02);color:var(--text);padding:9px 10px;border-radius:999px;font-size:12.5px}
+.chip.on{border-color:rgba(255,223,110,.6);box-shadow:0 0 0 2px rgba(255,223,110,.12) inset}
+.list{margin-top:12px}
+.item{display:flex;gap:10px;align-items:flex-start;padding:12px 10px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.02);margin-bottom:10px}
+.item.now{border-color:rgba(110,231,255,.6);box-shadow:0 0 0 2px rgba(110,231,255,.12) inset;background:rgba(110,231,255,.06)}
+.dot{width:10px;height:10px;border-radius:999px;margin-top:4px;background:rgba(154,164,178,.8)}
+.item.now .dot{background:var(--accent)}
+.itemBody{flex:1;min-width:0}
+.itemPlan{font-weight:800;font-size:14px;line-height:1.25;margin-bottom:4px;word-break:keep-all}
+.itemMeta{color:var(--muted);font-size:12px;display:flex;flex-direction:column;gap:4px}
+.small{font-size:11.5px;color:var(--muted);line-height:1.4}
+.footer{margin-top:12px;color:var(--muted);font-size:11.5px;line-height:1.4}
+details{border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.02);padding:10px 12px}
+summary{cursor:pointer;font-weight:800;list-style:none}
+summary::-webkit-details-marker{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="badge">🗓️</div>
+    <div>
+      <h1>수빈 일정표 · 모바일</h1>
+      <div class="sub">현재 시간에 맞춰 <b>지금/다음/이전</b>을 자동 표시합니다.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="pill">🇰🇷 한국시간 <strong id="clockKR">--:--:--</strong></div>
+    <div class="pill">🌎 현지시간(밴쿠버) <strong id="clockPAC">--:--:--</strong></div>
+  </div>
+
+  <div class="toggle" aria-label="기준 선택">
+    <button class="btn active" id="basisKR" type="button">한국 기준</button>
+    <button class="btn" id="basisPAC" type="button">현지 기준</button>
+  </div>
+
+  <!-- NOW/NEXT/PREV moved ABOVE search/filter -->
+  <div class="section grid3" id="cards">
+    <div class="card" id="cardNow">
+      <div class="cardTitle"><b>지금</b><span class="tag" id="tagNow">NOW</span></div>
+      <div class="mainPlan" id="nowPlan">—</div>
+      <div class="times">
+        <div class="timeK" id="nowKR">KR —</div>
+        <div class="timeL" id="nowLocal">LOCAL —</div>
+      </div>
+    </div>
+    <div class="card" id="cardNext">
+      <div class="cardTitle"><b>다음</b><span class="tag">NEXT</span></div>
+      <div class="mainPlan" id="nextPlan">—</div>
+      <div class="times">
+        <div class="timeK" id="nextKR">KR —</div>
+        <div class="timeL" id="nextLocal">LOCAL —</div>
+      </div>
+    </div>
+    <div class="card" id="cardPrev">
+      <div class="cardTitle"><b>이전</b><span class="tag">PREV</span></div>
+      <div class="mainPlan" id="prevPlan">—</div>
+      <div class="times">
+        <div class="timeK" id="prevKR">KR —</div>
+        <div class="timeL" id="prevLocal">LOCAL —</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section card">
+    <div class="searchbox">
+      <input id="q" type="search" placeholder="검색 (예: 체크인, 출발, 인천, 밴쿠버…)" autocomplete="off"/>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="small" style="margin-top:10px">* ‘현지 기준’은 밴쿠버(시애틀 포함) 시간 흐름으로 계산합니다.</div>
+  </div>
+
+  <div class="section">
+    <details open>
+      <summary>전체 일정</summary>
+      <div class="list" id="list"></div>
+    </details>
+  </div>
+
+  <div class="footer">
+    · “지금”은 <b>현재시간 ≥ 해당 일정시간</b> 이면서 <b>다음 일정시간</b>보다 이전인 항목으로 계산합니다.<br/>
+    · 시간대 변환은 겨울 기준(밴쿠버↔한국 17시간 차이)로 계산됩니다.
+  </div>
+</div>
+
+<script>
+const DATA = [{"id": 1, "plan": "집 출발", "local_tz": "Asia/Seoul", "kr": "2025-12-23T08:30", "pac": "2025-12-22T15:30", "local": "2025-12-23T08:30"}, {"id": 2, "plan": "김해출발", "local_tz": "Asia/Seoul", "kr": "2025-12-23T10:40", "pac": "2025-12-22T17:40", "local": "2025-12-23T10:40"}, {"id": 3, "plan": "김포도착", "local_tz": "Asia/Seoul", "kr": "2025-12-23T11:45", "pac": "2025-12-22T18:45", "local": "2025-12-23T11:45"}, {"id": 4, "plan": "체크인(Holiday inn & Suite Vancouver Downtown By IHG", "local_tz": "Asia/Seoul", "kr": "2025-12-23T15:00", "pac": "2025-12-22T22:00", "local": "2025-12-23T15:00"}, {"id": 5, "plan": "인천공항 출발", "local_tz": "Asia/Seoul", "kr": "2025-12-23T21:20", "pac": "2025-12-23T04:20", "local": "2025-12-23T21:20"}, {"id": 6, "plan": "밴쿠버 도착", "local_tz": "America/Vancouver", "kr": "2025-12-24T07:25", "pac": "2025-12-23T14:25", "local": "2025-12-23T14:25"}, {"id": 7, "plan": "밴쿠버 여행중", "local_tz": "America/Vancouver", "kr": "2025-12-24T17:00", "pac": "2025-12-24T00:00", "local": "2025-12-24T00:00"}, {"id": 8, "plan": "밴쿠버 여행중", "local_tz": "America/Vancouver", "kr": "2025-12-25T17:00", "pac": "2025-12-25T00:00", "local": "2025-12-25T00:00"}, {"id": 9, "plan": "밴쿠버 여행중", "local_tz": "America/Vancouver", "kr": "2025-12-26T17:00", "pac": "2025-12-26T00:00", "local": "2025-12-26T00:00"}, {"id": 10, "plan": "밴쿠버 여행중", "local_tz": "America/Vancouver", "kr": "2025-12-27T17:00", "pac": "2025-12-27T00:00", "local": "2025-12-27T00:00"}, {"id": 11, "plan": "밴쿠버 여행중", "local_tz": "America/Vancouver", "kr": "2025-12-28T17:00", "pac": "2025-12-28T00:00", "local": "2025-12-28T00:00"}, {"id": 12, "plan": "체크아웃(Holiday inn & Suite Vancouver Downtown By IHG", "local_tz": "America/Vancouver", "kr": "2025-12-30T04:00", "pac": "2025-12-29T11:00", "local": "2025-12-29T11:00"}, {"id": 13, "plan": "밴쿠버 출발", "local_tz": "America/Vancouver", "kr": "2025-12-30T04:00", "pac": "2025-12-29T11:00", "local": "2025-12-29T11:00"}, {"id": 14, "plan": "시애틀 도착", "local_tz": "America/Vancouver", "kr": "2025-12-30T08:00", "pac": "2025-12-29T15:00", "local": "2025-12-29T15:00"}, {"id": 15, "plan": "체크인(Hyatt At Olive 8)", "local_tz": "America/Vancouver", "kr": "2025-12-30T08:00", "pac": "2025-12-29T15:00", "local": "2025-12-29T15:00"}, {"id": 16, "plan": "한국 새해", "local_tz": "America/Vancouver", "kr": "2026-01-01T00:00", "pac": "2025-12-30T07:00", "local": "2025-12-30T07:00"}, {"id": 17, "plan": "시애틀여행중", "local_tz": "America/Vancouver", "kr": "2025-12-31T17:00", "pac": "2025-12-31T00:00", "local": "2025-12-31T00:00"}, {"id": 18, "plan": "시애틀여행중", "local_tz": "America/Vancouver", "kr": "2026-01-01T17:00", "pac": "2026-01-01T00:00", "local": "2026-01-01T00:00"}, {"id": 19, "plan": "체크아웃(Hyatt At Olive 8)", "local_tz": "America/Vancouver", "kr": "2026-01-03T04:00", "pac": "2026-01-02T11:00", "local": "2026-01-02T11:00"}, {"id": 20, "plan": "시애틀 출발", "local_tz": "America/Vancouver", "kr": "2026-01-03T07:55", "pac": "2026-01-02T14:55", "local": "2026-01-02T14:55"}, {"id": 21, "plan": "밴쿠버 도착", "local_tz": "America/Vancouver", "kr": "2026-01-03T12:00", "pac": "2026-01-02T19:00", "local": "2026-01-02T19:00"}, {"id": 22, "plan": "체크인(Level Vancouver - Yaletown Seymour)", "local_tz": "America/Vancouver", "kr": "2026-01-03T12:00", "pac": "2026-01-02T19:00", "local": "2026-01-02T19:00"}, {"id": 23, "plan": "밴쿠버 여행중", "local_tz": "America/Vancouver", "kr": "2026-01-03T17:00", "pac": "2026-01-03T00:00", "local": "2026-01-03T00:00"}, {"id": 24, "plan": "밴쿠버 여행중", "local_tz": "America/Vancouver", "kr": "2026-01-04T17:00", "pac": "2026-01-04T00:00", "local": "2026-01-04T00:00"}, {"id": 25, "plan": "밴쿠버 여행중", "local_tz": "America/Vancouver", "kr": "2026-01-05T17:00", "pac": "2026-01-05T00:00", "local": "2026-01-05T00:00"}, {"id": 26, "plan": "체크아웃(Level Vancouver - Yaletown Seymour)", "local_tz": "America/Vancouver", "kr": "2026-01-07T04:00", "pac": "2026-01-06T11:00", "local": "2026-01-06T11:00"}, {"id": 27, "plan": "밴쿠버 출발", "local_tz": "America/Vancouver", "kr": "2026-01-07T09:25", "pac": "2026-01-06T16:25", "local": "2026-01-06T16:25"}, {"id": 28, "plan": "인천 도착", "local_tz": "Asia/Seoul", "kr": "2026-01-07T21:35", "pac": "2026-01-07T04:35", "local": "2026-01-07T21:35"}, {"id": 29, "plan": "김포출발", "local_tz": "Asia/Seoul", "kr": "2026-01-08T20:00", "pac": "2026-01-08T03:00", "local": "2026-01-08T20:00"}, {"id": 30, "plan": "김해도착", "local_tz": "Asia/Seoul", "kr": "2026-01-08T21:10", "pac": "2026-01-08T04:10", "local": "2026-01-08T21:10"}];
+
+// category tags (simple)
+const CATS = [
+  { key:"이동", emoji:"✈️",  test:(p)=>/출발|도착|공항|비행|김해|김포|인천/.test(p) },
+  { key:"체크인", emoji:"🏨", test:(p)=>/체크인/.test(p) },
+  { key:"체크아웃", emoji:"🧳", test:(p)=>/체크아웃/.test(p) },
+  { key:"여행", emoji:"🗺️", test:(p)=>/여행중/.test(p) },
+];
+
+let basis = "KR"; // KR or PAC
+let activeCats = new Set();
+let query = "";
+
+const fmt = (iso, tz) => {
+  const d = new Date(iso);
+  const opt = { year:"numeric", month:"2-digit", day:"2-digit", weekday:"short", hour:"2-digit", minute:"2-digit", hour12:false, timeZone: tz };
+  return new Intl.DateTimeFormat("ko-KR", opt).format(d).replaceAll(". ", ".").replaceAll(" ", " ");
+};
+
+const fmtClock = (date, tz) => {
+  return new Intl.DateTimeFormat("ko-KR", { hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false, timeZone: tz }).format(date);
+};
+
+function getNowDate() {
+  return new Date();
+}
+
+function sortByBasis(arr) {
+  const key = basis === "KR" ? "kr" : "pac";
+  return [...arr].sort((a,b)=> new Date(a[key]) - new Date(b[key]));
+}
+
+function deriveCat(plan) {
+  for (const c of CATS) if (c.test(plan)) return c.key;
+  return "기타";
+}
+
+function renderChips() {
+  const el = document.getElementById("chips");
+  el.innerHTML = "";
+  const cats = ["전체", ...new Set(DATA.map(r=>deriveCat(r.plan)))];
+  cats.forEach(cat=>{
+    const b = document.createElement("button");
+    b.type="button";
+    b.className = "chip" + ((cat!=="전체" && activeCats.has(cat)) ? " on" : (cat==="전체" && activeCats.size===0 ? " on":""));
+    const emoji = (CATS.find(x=>x.key===cat)?.emoji) || "•";
+    b.textContent = (cat==="전체") ? "전체" : `${emoji} ${cat}`;
+    b.onclick = ()=>{
+      if (cat==="전체") {
+        activeCats.clear();
+      } else {
+        if (activeCats.has(cat)) activeCats.delete(cat);
+        else activeCats.add(cat);
+      }
+      render();
+      renderChips();
+    };
+    el.appendChild(b);
+  });
+}
+
+function filteredData() {
+  const q = query.trim().toLowerCase();
+  return sortByBasis(DATA).filter(r=>{
+    const cat = deriveCat(r.plan);
+    if (activeCats.size>0 && !activeCats.has(cat)) return false;
+    if (!q) return true;
+    return (r.plan||"").toLowerCase().includes(q);
+  });
+}
+
+function pickNowPrevNext(arr) {
+  if (arr.length===0) return {prev:null, now:null, next:null};
+  const now = getNowDate();
+  const key = basis === "KR" ? "kr" : "pac";
+  // find last item with time <= now
+  let idx = -1;
+  for (let i=0;i<arr.length;i++) {
+    if (new Date(arr[i][key]) <= now) idx = i;
+    else break;
+  }
+  const nowItem = idx>=0 ? arr[idx] : null;
+  const prevItem = idx>0 ? arr[idx-1] : null;
+  const nextItem = (idx+1 < arr.length) ? arr[idx+1] : null;
+  return {prev:prevItem, now:nowItem, next:nextItem};
+}
+
+function setCard(prefix, item) {
+  const planEl = document.getElementById(prefix+"Plan");
+  const krEl = document.getElementById(prefix+"KR");
+  const locEl = document.getElementById(prefix+"Local");
+  if (!item) {
+    planEl.textContent = "—";
+    krEl.textContent = "KR —";
+    locEl.textContent = "LOCAL —";
+    return;
+  }
+  planEl.textContent = item.plan || "—";
+  krEl.textContent = "KR " + fmt(item.kr, "Asia/Seoul");
+  locEl.textContent = "LOCAL " + fmt(item.pac, "America/Vancouver");
+}
+
+function renderList(arr, nowItem) {
+  const el = document.getElementById("list");
+  el.innerHTML = "";
+  const nowKey = basis==="KR" ? "kr" : "pac";
+  const nowIso = nowItem ? nowItem[nowKey] : null;
+
+  arr.forEach(r=>{
+    const item = document.createElement("div");
+    item.className = "item" + (nowIso && r[nowKey]===nowIso ? " now" : "");
+    const dot = document.createElement("div");
+    dot.className = "dot";
+    const body = document.createElement("div");
+    body.className = "itemBody";
+    const plan = document.createElement("div");
+    plan.className = "itemPlan";
+    plan.textContent = r.plan || "—";
+    const meta = document.createElement("div");
+    meta.className = "itemMeta";
+    const cat = deriveCat(r.plan||"");
+    meta.innerHTML = `
+      <div>🇰🇷 ${fmt(r.kr,"Asia/Seoul")}</div>
+      <div>🌎 ${fmt(r.pac,"America/Vancouver")} <span style="opacity:.75">(${cat})</span></div>
+    `;
+    body.appendChild(plan);
+    body.appendChild(meta);
+    item.appendChild(dot);
+    item.appendChild(body);
+    el.appendChild(item);
+  });
+}
+
+function render() {
+  const arr = filteredData();
+  const picks = pickNowPrevNext(arr);
+  setCard("now", picks.now);
+  setCard("next", picks.next);
+  setCard("prev", picks.prev);
+  renderList(arr, picks.now);
+
+  // cardNow highlight only when basis item exists
+  document.getElementById("tagNow").textContent = basis==="KR" ? "NOW (KR)" : "NOW (LOCAL)";
+}
+
+function tick() {
+  const now = new Date();
+  document.getElementById("clockKR").textContent = fmtClock(now, "Asia/Seoul");
+  document.getElementById("clockPAC").textContent = fmtClock(now, "America/Vancouver");
+  render(); // keep NOW moving
+}
+
+document.getElementById("basisKR").onclick = ()=>{
+  basis="KR";
+  document.getElementById("basisKR").classList.add("active");
+  document.getElementById("basisPAC").classList.remove("active");
+  render();
+};
+document.getElementById("basisPAC").onclick = ()=>{
+  basis="PAC";
+  document.getElementById("basisPAC").classList.add("active");
+  document.getElementById("basisKR").classList.remove("active");
+  render();
+};
+document.getElementById("q").addEventListener("input", (e)=>{
+  query = e.target.value || "";
+  render();
+});
+
+renderChips();
+tick();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>
