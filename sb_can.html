@@ -15,7 +15,6 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothi
 .header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .badge{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#041018}
 h1{font-size:18px;margin:0;letter-spacing:-.2px}
-.sub{margin:2px 0 0;color:var(--muted);font-size:12.5px;line-height:1.35}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .pill{border:1px solid var(--line);background:rgba(255,255,255,.02);padding:8px 10px;border-radius:999px;color:var(--text);font-size:12.5px}
 .pill strong{font-weight:700}
@@ -57,14 +56,12 @@ summary::-webkit-details-marker{display:none}
 <div class="wrap">
   <div class="header">
     <div class="badge">🗓️</div>
-    <div>
-      <h1>수빈 밴쿠버/시애틀 일정표</h1>
-    </div>
+    <div><h1>수빈 밴쿠버/시애틀 일정표</h1></div>
   </div>
 
   <div class="row">
     <div class="pill">🇰🇷 한국시간 <strong id="clockKR">--:--:--</strong></div>
-    <div class="pill">🌎 현지시간(밴쿠버) <strong id="clockPAC">--:--:--</strong></div>
+    <div class="pill">🇨🇦 YVR(밴쿠버) <strong id="clockPAC">--:--:--</strong></div>
   </div>
 
   <div class="toggle" aria-label="기준 선택">
@@ -72,14 +69,13 @@ summary::-webkit-details-marker{display:none}
     <button class="btn" id="basisPAC" type="button">현지 기준</button>
   </div>
 
-  <!-- NOW/NEXT/PREV moved ABOVE search/filter -->
   <div class="section grid3" id="cards">
     <div class="card" id="cardNow">
       <div class="cardTitle"><b>지금</b><span class="tag" id="tagNow">NOW</span></div>
       <div class="mainPlan" id="nowPlan">—</div>
       <div class="times">
         <div class="timeK" id="nowKR">KR —</div>
-        <div class="timeL" id="nowLocal">LOCAL —</div>
+        <div class="timeL" id="nowYVR">YVR —</div>
       </div>
     </div>
     <div class="card" id="cardNext">
@@ -87,7 +83,7 @@ summary::-webkit-details-marker{display:none}
       <div class="mainPlan" id="nextPlan">—</div>
       <div class="times">
         <div class="timeK" id="nextKR">KR —</div>
-        <div class="timeL" id="nextLocal">LOCAL —</div>
+        <div class="timeL" id="nextYVR">YVR —</div>
       </div>
     </div>
     <div class="card" id="cardPrev">
@@ -95,7 +91,7 @@ summary::-webkit-details-marker{display:none}
       <div class="mainPlan" id="prevPlan">—</div>
       <div class="times">
         <div class="timeK" id="prevKR">KR —</div>
-        <div class="timeL" id="prevLocal">LOCAL —</div>
+        <div class="timeL" id="prevYVR">YVR —</div>
       </div>
     </div>
   </div>
@@ -105,7 +101,7 @@ summary::-webkit-details-marker{display:none}
       <input id="q" type="search" placeholder="검색 (예: 체크인, 출발, 인천, 밴쿠버…)" autocomplete="off"/>
     </div>
     <div class="chips" id="chips"></div>
-    <div class="small" style="margin-top:10px">* ‘현지 기준’은 밴쿠버(시애틀 포함) 시간 흐름으로 계산합니다.</div>
+    <div class="small" style="margin-top:10px">* 표시는 <b>데이터에 적힌 시간 그대로</b> 보여줍니다.</div>
   </div>
 
   <div class="section">
@@ -116,57 +112,49 @@ summary::-webkit-details-marker{display:none}
   </div>
 
   <div class="footer">
-    · “지금”은 <b>현재시간 ≥ 해당 일정시간</b> 이면서 <b>다음 일정시간</b>보다 이전인 항목으로 계산합니다.<br/>
-    · 시간대 변환은 겨울 기준(밴쿠버↔한국 17시간 차이)로 계산됩니다.
+    · “지금/다음/이전” 계산을 위해서만 시간 비교(정렬/판단)를 합니다.<br/>
+    · 이 페이지는 12~1월 기준으로 <b>KST(+9) / PST(-8)</b> 고정 오프셋으로 비교합니다.
   </div>
 </div>
 
 <script>
+/* ======================
+   DATA (local 제거됨)
+====================== */
 const DATA = [
   { "id": 1,  "plan": "집 출발", "local_tz": "Asia/Seoul", "kr": "2025-12-23T08:30", "pac": "2025-12-22T15:30" },
   { "id": 2,  "plan": "김해출발", "local_tz": "Asia/Seoul", "kr": "2025-12-23T10:40", "pac": "2025-12-22T17:40" },
   { "id": 3,  "plan": "김포도착", "local_tz": "Asia/Seoul", "kr": "2025-12-23T11:45", "pac": "2025-12-22T18:45" },
-
   { "id": 4,  "plan": "체크인(Holiday inn & Suite Vancouver Downtown By IHG)", "local_tz": "America/Vancouver", "kr": "2025-12-24T08:00", "pac": "2025-12-23T15:00" },
-
   { "id": 5,  "plan": "인천공항 출발", "local_tz": "Asia/Seoul", "kr": "2025-12-23T21:20", "pac": "2025-12-23T04:20" },
   { "id": 6,  "plan": "밴쿠버 도착", "local_tz": "America/Vancouver", "kr": "2025-12-24T07:25", "pac": "2025-12-23T14:25" },
-
   { "id": 7,  "plan": "밴쿠버 여행중", "local_tz": "America/Vancouver", "kr": "2025-12-24T17:00", "pac": "2025-12-24T00:00" },
   { "id": 8,  "plan": "밴쿠버 여행중", "local_tz": "America/Vancouver", "kr": "2025-12-25T17:00", "pac": "2025-12-25T00:00" },
   { "id": 9,  "plan": "밴쿠버 여행중", "local_tz": "America/Vancouver", "kr": "2025-12-26T17:00", "pac": "2025-12-26T00:00" },
   { "id": 10, "plan": "밴쿠버 여행중", "local_tz": "America/Vancouver", "kr": "2025-12-27T17:00", "pac": "2025-12-27T00:00" },
   { "id": 11, "plan": "밴쿠버 여행중", "local_tz": "America/Vancouver", "kr": "2025-12-28T17:00", "pac": "2025-12-28T00:00" },
-
   { "id": 12, "plan": "체크아웃(Holiday inn & Suite Vancouver Downtown By IHG)", "local_tz": "America/Vancouver", "kr": "2025-12-30T04:00", "pac": "2025-12-29T11:00" },
   { "id": 13, "plan": "밴쿠버 출발", "local_tz": "America/Vancouver", "kr": "2025-12-30T04:00", "pac": "2025-12-29T11:00" },
-
   { "id": 14, "plan": "시애틀 도착", "local_tz": "America/Vancouver", "kr": "2025-12-30T08:00", "pac": "2025-12-29T15:00" },
   { "id": 15, "plan": "체크인(Hyatt At Olive 8)", "local_tz": "America/Vancouver", "kr": "2025-12-30T08:00", "pac": "2025-12-29T15:00" },
-
   { "id": 16, "plan": "한국 새해", "local_tz": "America/Vancouver", "kr": "2026-01-01T00:00", "pac": "2025-12-30T07:00" },
-
   { "id": 17, "plan": "시애틀여행중", "local_tz": "America/Vancouver", "kr": "2025-12-31T17:00", "pac": "2025-12-31T00:00" },
   { "id": 18, "plan": "시애틀여행중", "local_tz": "America/Vancouver", "kr": "2026-01-01T17:00", "pac": "2026-01-01T00:00" },
-
   { "id": 19, "plan": "체크아웃(Hyatt At Olive 8)", "local_tz": "America/Vancouver", "kr": "2026-01-03T04:00", "pac": "2026-01-02T11:00" },
   { "id": 20, "plan": "시애틀 출발", "local_tz": "America/Vancouver", "kr": "2026-01-03T07:55", "pac": "2026-01-02T14:55" },
-
   { "id": 21, "plan": "밴쿠버 도착", "local_tz": "America/Vancouver", "kr": "2026-01-03T12:00", "pac": "2026-01-02T19:00" },
   { "id": 22, "plan": "체크인(Level Vancouver - Yaletown Seymour)", "local_tz": "America/Vancouver", "kr": "2026-01-03T12:00", "pac": "2026-01-02T19:00" },
-
   { "id": 23, "plan": "밴쿠버 여행중", "local_tz": "America/Vancouver", "kr": "2026-01-03T17:00", "pac": "2026-01-03T00:00" },
   { "id": 24, "plan": "밴쿠버 여행중", "local_tz": "America/Vancouver", "kr": "2026-01-04T17:00", "pac": "2026-01-04T00:00" },
   { "id": 25, "plan": "밴쿠버 여행중", "local_tz": "America/Vancouver", "kr": "2026-01-05T17:00", "pac": "2026-01-05T00:00" },
-
   { "id": 26, "plan": "체크아웃(Level Vancouver - Yaletown Seymour)", "local_tz": "America/Vancouver", "kr": "2026-01-07T04:00", "pac": "2026-01-06T11:00" },
   { "id": 27, "plan": "밴쿠버 출발", "local_tz": "America/Vancouver", "kr": "2026-01-07T09:25", "pac": "2026-01-06T16:25" },
-
   { "id": 28, "plan": "인천 도착", "local_tz": "Asia/Seoul", "kr": "2026-01-07T21:35", "pac": "2026-01-07T04:35" },
   { "id": 29, "plan": "김포출발", "local_tz": "Asia/Seoul", "kr": "2026-01-08T20:00", "pac": "2026-01-08T03:00" },
   { "id": 30, "plan": "김해도착", "local_tz": "Asia/Seoul", "kr": "2026-01-08T21:10", "pac": "2026-01-08T04:10" }
 ];
-// category tags (simple)
+
+// 태그
 const CATS = [
   { key:"이동", emoji:"✈️",  test:(p)=>/출발|도착|공항|비행|김해|김포|인천/.test(p) },
   { key:"체크인", emoji:"🏨", test:(p)=>/체크인/.test(p) },
@@ -178,25 +166,47 @@ let basis = "KR"; // KR or PAC
 let activeCats = new Set();
 let query = "";
 
-const fmt = (iso, tz) => {
-  const d = new Date(iso);
-  const opt = { year:"numeric", month:"2-digit", day:"2-digit", weekday:"short", hour:"2-digit", minute:"2-digit", hour12:false, timeZone: tz };
-  return new Intl.DateTimeFormat("ko-KR", opt).format(d).replaceAll(". ", ".").replaceAll(" ", " ");
-};
+// ======================
+// ✅ 표시용: 데이터 그대로(변환 X)
+//  - 요일만 날짜로 계산
+// ======================
+const WDAY = ["일","월","화","수","목","금","토"];
 
-const fmtClock = (date, tz) => {
-  return new Intl.DateTimeFormat("ko-KR", { hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false, timeZone: tz }).format(date);
-};
-
-function getNowDate() {
-  return new Date();
+function parseIsoLocal(iso) {
+  const [d,t] = String(iso).split("T");
+  const [Y,M,D] = d.split("-").map(Number);
+  const [h,mi] = t.split(":").map(Number);
+  return {Y,M,D,h,mi};
 }
 
-function sortByBasis(arr) {
-  const key = basis === "KR" ? "kr" : "pac";
-  return [...arr].sort((a,b)=> new Date(a[key]) - new Date(b[key]));
+function pad2(n){ return String(n).padStart(2,"0"); }
+
+function fmtLiteral(isoLocal) {
+  const {Y,M,D,h,mi} = parseIsoLocal(isoLocal);
+  const w = WDAY[new Date(Date.UTC(Y, M-1, D)).getUTCDay()];
+  return `${Y}.${pad2(M)}.${pad2(D)}.(${w}) ${pad2(h)}:${pad2(mi)}`;
 }
 
+// ======================
+// ✅ 비교/정렬용: 고정 오프셋으로 epoch 생성
+// (12~1월 기준 KST(+9), PST(-8) → DST 고려 필요 없음)
+// ======================
+const OFFSET_MIN = {
+  KR:  9 * 60,   // KST = UTC+9
+  PAC: -8 * 60   // PST = UTC-8 (밴쿠버/시애틀 겨울)
+};
+
+function epochFromWall(isoLocal, offsetMin) {
+  const {Y,M,D,h,mi} = parseIsoLocal(isoLocal);
+  // wall = UTC + offset  =>  UTC = wall - offset
+  const wallAsUTC = Date.UTC(Y, M-1, D, h, mi, 0);
+  return wallAsUTC - offsetMin * 60000;
+}
+
+function basisKey(){ return basis === "KR" ? "kr" : "pac"; }
+function basisOffset(){ return basis === "KR" ? OFFSET_MIN.KR : OFFSET_MIN.PAC; }
+
+// 칩
 function deriveCat(plan) {
   for (const c of CATS) if (c.test(plan)) return c.key;
   return "기타";
@@ -213,12 +223,8 @@ function renderChips() {
     const emoji = (CATS.find(x=>x.key===cat)?.emoji) || "•";
     b.textContent = (cat==="전체") ? "전체" : `${emoji} ${cat}`;
     b.onclick = ()=>{
-      if (cat==="전체") {
-        activeCats.clear();
-      } else {
-        if (activeCats.has(cat)) activeCats.delete(cat);
-        else activeCats.add(cat);
-      }
+      if (cat==="전체") activeCats.clear();
+      else (activeCats.has(cat) ? activeCats.delete(cat) : activeCats.add(cat));
       render();
       renderChips();
     };
@@ -228,68 +234,81 @@ function renderChips() {
 
 function filteredData() {
   const q = query.trim().toLowerCase();
-  return sortByBasis(DATA).filter(r=>{
-    const cat = deriveCat(r.plan);
-    if (activeCats.size>0 && !activeCats.has(cat)) return false;
-    if (!q) return true;
-    return (r.plan||"").toLowerCase().includes(q);
-  });
+  const key = basisKey();
+  const off = basisOffset();
+
+  return [...DATA]
+    .filter(r=>{
+      const cat = deriveCat(r.plan);
+      if (activeCats.size>0 && !activeCats.has(cat)) return false;
+      if (!q) return true;
+      return (r.plan||"").toLowerCase().includes(q);
+    })
+    .sort((a,b)=> epochFromWall(a[key], off) - epochFromWall(b[key], off));
 }
 
 function pickNowPrevNext(arr) {
   if (arr.length===0) return {prev:null, now:null, next:null};
-  const now = getNowDate();
-  const key = basis === "KR" ? "kr" : "pac";
-  // find last item with time <= now
+
+  const key = basisKey();
+  const off = basisOffset();
+  const nowEpoch = Date.now();
+
   let idx = -1;
   for (let i=0;i<arr.length;i++) {
-    if (new Date(arr[i][key]) <= now) idx = i;
+    if (epochFromWall(arr[i][key], off) <= nowEpoch) idx = i;
     else break;
   }
-  const nowItem = idx>=0 ? arr[idx] : null;
-  const prevItem = idx>0 ? arr[idx-1] : null;
-  const nextItem = (idx+1 < arr.length) ? arr[idx+1] : null;
-  return {prev:prevItem, now:nowItem, next:nextItem};
+  return {
+    prev: (idx>0) ? arr[idx-1] : null,
+    now:  (idx>=0) ? arr[idx] : null,
+    next: (idx+1 < arr.length) ? arr[idx+1] : null
+  };
 }
 
 function setCard(prefix, item) {
   const planEl = document.getElementById(prefix+"Plan");
-  const krEl = document.getElementById(prefix+"KR");
-  const locEl = document.getElementById(prefix+"Local");
+  const krEl   = document.getElementById(prefix+"KR");
+  const yvrEl  = document.getElementById(prefix+"YVR");
   if (!item) {
     planEl.textContent = "—";
     krEl.textContent = "KR —";
-    locEl.textContent = "LOCAL —";
+    yvrEl.textContent = "YVR —";
     return;
   }
   planEl.textContent = item.plan || "—";
-  krEl.textContent = "KR " + fmt(item.kr, "Asia/Seoul");
-  locEl.textContent = "LOCAL " + fmt(item.pac, "America/Vancouver");
+  krEl.textContent = "KR " + fmtLiteral(item.kr);
+  yvrEl.textContent = "YVR " + fmtLiteral(item.pac);
 }
 
 function renderList(arr, nowItem) {
   const el = document.getElementById("list");
   el.innerHTML = "";
-  const nowKey = basis==="KR" ? "kr" : "pac";
-  const nowIso = nowItem ? nowItem[nowKey] : null;
+  const key = basisKey();
+  const nowIso = nowItem ? nowItem[key] : null;
 
   arr.forEach(r=>{
     const item = document.createElement("div");
-    item.className = "item" + (nowIso && r[nowKey]===nowIso ? " now" : "");
+    item.className = "item" + (nowIso && r[key]===nowIso ? " now" : "");
+
     const dot = document.createElement("div");
     dot.className = "dot";
+
     const body = document.createElement("div");
     body.className = "itemBody";
+
     const plan = document.createElement("div");
     plan.className = "itemPlan";
     plan.textContent = r.plan || "—";
+
     const meta = document.createElement("div");
     meta.className = "itemMeta";
     const cat = deriveCat(r.plan||"");
     meta.innerHTML = `
-      <div>🇰🇷 ${fmt(r.kr,"Asia/Seoul")}</div>
-      <div>🌎 ${fmt(r.pac,"America/Vancouver")} <span style="opacity:.75">(${cat})</span></div>
+      <div>🇰🇷 ${fmtLiteral(r.kr)}</div>
+      <div>🇨🇦 YVR ${fmtLiteral(r.pac)} <span style="opacity:.75">(${cat})</span></div>
     `;
+
     body.appendChild(plan);
     body.appendChild(meta);
     item.appendChild(dot);
@@ -297,6 +316,13 @@ function renderList(arr, nowItem) {
     el.appendChild(item);
   });
 }
+
+// 시계는 실제 시간대로 표시 (이 부분은 정상이라 유지)
+const fmtClock = (date, tz) => {
+  return new Intl.DateTimeFormat("ko-KR", {
+    hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false, timeZone: tz
+  }).format(date);
+};
 
 function render() {
   const arr = filteredData();
@@ -306,15 +332,14 @@ function render() {
   setCard("prev", picks.prev);
   renderList(arr, picks.now);
 
-  // cardNow highlight only when basis item exists
-  document.getElementById("tagNow").textContent = basis==="KR" ? "NOW (KR)" : "NOW (LOCAL)";
+  document.getElementById("tagNow").textContent = (basis==="KR") ? "NOW (KR)" : "NOW (YVR)";
 }
 
 function tick() {
   const now = new Date();
-  document.getElementById("clockKR").textContent = fmtClock(now, "Asia/Seoul");
+  document.getElementById("clockKR").textContent  = fmtClock(now, "Asia/Seoul");
   document.getElementById("clockPAC").textContent = fmtClock(now, "America/Vancouver");
-  render(); // keep NOW moving
+  render();
 }
 
 document.getElementById("basisKR").onclick = ()=>{
