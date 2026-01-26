@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>VND → KRW</title>
+
+<style>
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: #fff;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .touch-zone {
+    flex: 1;
+    width: 100%;
+  }
+
+  .card {
+    padding: 24px;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(14px);
+    border-radius: 20px;
+    margin: 0 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  }
+
+  h1 {
+    margin: 0 0 8px;
+    font-size: 22px;
+    text-align: center;
+  }
+
+  .rate {
+    font-size: 13px;
+    text-align: center;
+    opacity: 0.7;
+    margin-bottom: 14px;
+  }
+
+  input {
+    width: 100%;
+    padding: 16px;
+    font-size: 22px;
+    border-radius: 14px;
+    border: none;
+    outline: none;
+    text-align: right;
+  }
+
+  .result {
+    margin-top: 18px;
+    font-size: 24px;
+    text-align: center;
+    font-weight: bold;
+  }
+
+  .korean {
+    margin-top: 6px;
+    font-size: 16px;
+    text-align: center;
+    opacity: 0.85;
+  }
+
+  .hint {
+    margin-top: 12px;
+    font-size: 12px;
+    text-align: center;
+    opacity: 0.6;
+  }
+</style>
+</head>
+
+<body>
+
+<!-- 🔼 위 터치: 초기화 -->
+<div class="touch-zone" id="clearZone"></div>
+
+<div class="card">
+  <h1>🇻🇳 VND → 🇰🇷 KRW</h1>
+  <div class="rate" id="rate">환율 불러오는 중...</div>
+
+  <input
+    id="vndInput"
+    type="number"
+    inputmode="numeric"
+    placeholder="VND 입력"
+  />
+
+  <div class="result" id="result">0원</div>
+  <div class="korean" id="korean">영원</div>
+  <div class="hint">위 터치: 초기화 · 아래 터치: ×1000</div>
+</div>
+
+<!-- 🔽 아래 터치: ×1000 -->
+<div class="touch-zone" id="multiplyZone"></div>
+
+<script>
+let exchangeRate = 0;
+const input = document.getElementById("vndInput");
+const result = document.getElementById("result");
+const korean = document.getElementById("korean");
+
+// 환율 로드
+async function loadRate() {
+  const res = await fetch("https://open.er-api.com/v6/latest/VND");
+  const data = await res.json();
+  exchangeRate = data.rates.KRW;
+  document.getElementById("rate").innerText =
+    `현재 환율: 1 VND = ${exchangeRate.toFixed(4)} 원`;
+}
+loadRate();
+
+// 숫자 → 한글 변환
+function numberToKorean(num) {
+  if (num === 0) return "영원";
+
+  // 🔥 십원 단위부터 생략 (100원 단위까지만)
+  num = Math.floor(num / 100) * 100;
+
+  const bigUnits = ["", "만", "억", "조"];
+  const smallUnits = ["", "십", "백", "천"];
+  const nums = ["영", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구"];
+
+  let parts = [];
+  let unitIndex = 0;
+
+  while (num > 0) {
+    const chunk = num % 10000;
+
+    if (chunk > 0) {
+      let chunkParts = [];
+      let temp = chunk;
+
+      for (let i = 0; i < 4; i++) {
+        const digit = temp % 10;
+
+        if (digit > 0) {
+          // 일십 / 일백 / 일천 → 십 / 백 / 천
+          if (digit === 1 && i > 0) {
+            chunkParts.unshift(smallUnits[i]);
+          } else {
+            chunkParts.unshift(nums[digit] + smallUnits[i]);
+          }
+        }
+
+        temp = Math.floor(temp / 10);
+      }
+
+      let chunkText = chunkParts.join(" ");
+
+      // 🔥 일만 → 만
+      if (chunkText === "일" && unitIndex > 0) {
+        chunkText = "";
+      }
+
+      const unit = bigUnits[unitIndex];
+      parts.unshift((chunkText + unit).trim());
+    }
+
+    num = Math.floor(num / 10000);
+    unitIndex++;
+  }
+
+  return parts.join(" ") + "원";
+}
+
+
+
+function calculate() {
+  const vnd = Number(input.value);
+  if (!vnd || !exchangeRate) {
+    result.innerText = "0원";
+    korean.innerText = "영원";
+    return;
+  }
+
+  const won = Math.floor(vnd * exchangeRate); // 🔥 소수점 제거
+  result.innerText = `${won.toLocaleString()}원`;
+  korean.innerText = numberToKorean(won);
+}
+
+// 입력 즉시 계산
+input.addEventListener("input", calculate);
+
+// 🔼 초기화 + 포커스
+document.getElementById("clearZone").addEventListener("click", () => {
+  input.value = "";
+  result.innerText = "0원";
+  korean.innerText = "영원";
+  input.focus();
+});
+
+// 🔽 ×1000 + 포커스
+document.getElementById("multiplyZone").addEventListener("click", () => {
+  if (!input.value) return;
+  input.value = Number(input.value) * 1000;
+  calculate();
+  input.focus();
+});
+
+// 최초 진입 시 포커스
+window.onload = () => input.focus();
+</script>
+
+</body>
+</html>
+SE
