@@ -52,10 +52,10 @@
     gap: 8px;
   }
 
-  /* 🔧 입력란 세로 높이 축소 (2/3) */
+  /* 🔹 입력란: 가로 50% */
   input {
     flex: 1;
-    padding: 10px 14px;   /* 기존 16px → 축소 */
+    padding: 10px 14px;
     font-size: 22px;
     border-radius: 12px;
     border: none;
@@ -63,8 +63,9 @@
     text-align: right;
   }
 
+  /* 🔹 버튼: 입력란 대비 2배 */
   .btn {
-    width: 160px;
+    flex: 2;
     font-size: 20px;
     border-radius: 12px;
     border: none;
@@ -82,7 +83,6 @@
     min-height: 22px;
   }
 
-  /* 🔧 합산 금액 영역 여백 정리 */
   .result {
     margin-top: 14px;
     font-size: 24px;
@@ -92,7 +92,7 @@
   }
 
   .korean {
-    margin-top: 2px;      /* 기존 여백 제거 */
+    margin-top: 2px;
     font-size: 16px;
     text-align: center;
     opacity: 0.85;
