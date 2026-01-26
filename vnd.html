@@ -17,19 +17,17 @@
     background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
     color: #fff;
     min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
   }
 
   .container {
     width: 100%;
     max-width: 420px;
-    padding: 20px 16px 0;
+    padding: 20px 16px;
+    margin: 0 auto;
   }
 
   .card {
-    padding: 24px;
+    padding: 22px;
     background: rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(14px);
     border-radius: 20px;
@@ -37,7 +35,7 @@
   }
 
   h1 {
-    margin: 0 0 8px;
+    margin: 0 0 10px;
     font-size: 22px;
     text-align: center;
   }
@@ -49,40 +47,56 @@
     margin-bottom: 14px;
   }
 
+  .input-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* 🔧 입력란 세로 높이 축소 (2/3) */
   input {
-    width: 100%;
-    padding: 16px;
+    flex: 1;
+    padding: 10px 14px;   /* 기존 16px → 축소 */
     font-size: 22px;
-    border-radius: 14px;
+    border-radius: 12px;
     border: none;
     outline: none;
     text-align: right;
   }
 
-  .result {
-    margin-top: 18px;
-    font-size: 24px;
-    text-align: center;
+  .btn {
+    width: 160px;
+    font-size: 20px;
+    border-radius: 12px;
+    border: none;
     font-weight: bold;
   }
 
+  .btn.plus { background: #4CAF50; color: #fff; }
+  .btn.clear { background: #f44336; color: #fff; }
+
+  .expression {
+    margin-top: 10px;
+    font-size: 18px;
+    text-align: center;
+    color: #ffeb3b;
+    min-height: 22px;
+  }
+
+  /* 🔧 합산 금액 영역 여백 정리 */
+  .result {
+    margin-top: 14px;
+    font-size: 24px;
+    text-align: center;
+    font-weight: bold;
+    line-height: 1.2;
+  }
+
   .korean {
-    margin-top: 6px;
+    margin-top: 2px;      /* 기존 여백 제거 */
     font-size: 16px;
     text-align: center;
     opacity: 0.85;
-  }
-
-  .hint {
-    margin-top: 12px;
-    font-size: 12px;
-    text-align: center;
-    opacity: 0.6;
-  }
-
-  .multiply-zone {
-    flex: 1;
-    width: 100%;
+    line-height: 1.2;
   }
 </style>
 </head>
@@ -90,37 +104,36 @@
 <body>
 
 <div class="container">
-  <div class="card">
+  <div class="card" id="card">
     <h1>🇻🇳 VND → 🇰🇷 KRW</h1>
     <div class="rate" id="rate">환율 불러오는 중...</div>
 
-    <input
-      id="vndInput"
-      type="text"
-      inputmode="numeric"
-      placeholder="VND 입력 (터치 시 초기화)"
-    />
+    <div class="input-row">
+      <input id="vndInput" type="text" inputmode="numeric" placeholder="VND 입력" />
+      <button class="btn plus" id="plusBtn">+</button>
+      <button class="btn clear" id="clearBtn">C</button>
+    </div>
+
+    <div class="expression" id="expression"></div>
 
     <div class="result" id="result">0원</div>
     <div class="korean" id="korean">영원</div>
-    <div class="hint">입력창 터치: 초기화 · 아래 화면 터치: ×1000</div>
   </div>
 </div>
 
-<div class="multiply-zone" id="multiplyZone"></div>
-
-<audio id="clickSound" preload="auto">
-  <source src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" type="audio/mpeg">
-</audio>
-
 <script>
 let exchangeRate = 0;
+let totalVnd = 0;
+let displayTerms = [];
+let showingTotal = false;
 
 const input = document.getElementById("vndInput");
 const result = document.getElementById("result");
 const korean = document.getElementById("korean");
+const expression = document.getElementById("expression");
+const card = document.getElementById("card");
 
-// 📡 환율
+// 환율
 async function loadRate() {
   const res = await fetch("https://open.er-api.com/v6/latest/VND");
   const data = await res.json();
@@ -130,7 +143,7 @@ async function loadRate() {
 }
 loadRate();
 
-// 🔢 숫자 → 한글
+// 숫자 → 한글
 function numberToKorean(num) {
   if (num === 0) return "영원";
   num = Math.floor(num / 100) * 100;
@@ -162,8 +175,8 @@ function numberToKorean(num) {
   return out.join(" ") + "원";
 }
 
-// 🧮 계산
-function calculate(vnd) {
+// 원화 표시
+function updateKRW(vnd) {
   if (!vnd || !exchangeRate) {
     result.innerText = "0원";
     korean.innerText = "영원";
@@ -174,47 +187,58 @@ function calculate(vnd) {
   korean.innerText = numberToKorean(won);
 }
 
-// 🔊📳
-function feedback() {
-  if (navigator.vibrate) navigator.vibrate(30);
-  const s = document.getElementById("clickSound");
-  s.currentTime = 0;
-  s.play().catch(() => {});
-}
-
-// ✅ 입력창 클릭 = 초기화 (유일한 초기화 트리거)
-input.addEventListener("click", () => {
-  input.value = "";
-  calculate(0);
-});
-
-// 🔢 입력 처리 + 콤마
-input.addEventListener("input", () => {
-  const pos = input.selectionStart;
+// 입력 처리
+input.addEventListener("click", e => e.stopPropagation());
+input.addEventListener("input", e => {
+  e.stopPropagation();
   const raw = input.value.replace(/,/g, "");
   if (!raw || isNaN(raw)) {
-    calculate(0);
+    updateKRW(0);
     return;
   }
 
-  const formatted = Number(raw).toLocaleString();
-  input.value = formatted;
-  calculate(Number(raw));
-
-  const diff = formatted.length - raw.length;
-  input.setSelectionRange(pos + diff, pos + diff);
+  input.value = Number(raw).toLocaleString();
+  showingTotal = false;
+  updateKRW(Number(raw));
 });
 
-// 🔽 ×1000 (절대 초기화 안 됨)
-document.getElementById("multiplyZone").addEventListener("click", () => {
+// 누적
+plusBtn.addEventListener("click", e => {
+  e.stopPropagation();
   const raw = Number(input.value.replace(/,/g, ""));
   if (!raw) return;
 
-  feedback();
+  totalVnd += raw;
+  displayTerms.push(Math.floor(raw / 1000));
+  expression.innerText = displayTerms.join(" + ");
 
-  const v = raw * 1000;
-  input.value = v.toLocaleString();
-  calculate(v);
+  input.value = "";
+  showingTotal = true;
+  updateKRW(totalVnd);
+  input.focus();
+});
+
+// 초기화
+clearBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  totalVnd = 0;
+  displayTerms = [];
+  expression.innerText = "";
+  input.value = "";
+  showingTotal = false;
+  updateKRW(0);
+  input.focus();
+});
+
+// 입력 외 클릭 → ×1000
+card.addEventListener("click", () => {
+  const raw = Number(input.value.replace(/,/g, ""));
+  if (!raw) return;
+
+  const multiplied = raw * 1000;
+  input.value = multiplied.toLocaleString();
+  showingTotal = false;
+  updateKRW(multiplied);
   input.focus();
 });
 
