@@ -47,29 +47,29 @@
     margin-bottom: 14px;
   }
 
+  /* 🔥 가로 비율 확정: 입력 6 / 버튼 4 / 버튼 4 */
   .input-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 6fr 4fr 4fr;
     gap: 8px;
   }
 
-  /* 🔹 입력란: 가로 50% */
   input {
-    flex: 1;
     padding: 10px 14px;
     font-size: 22px;
     border-radius: 12px;
     border: none;
     outline: none;
     text-align: right;
+    width: 100%;
   }
 
-  /* 🔹 버튼: 입력란 대비 2배 */
   .btn {
-    flex: 2;
     font-size: 20px;
     border-radius: 12px;
     border: none;
     font-weight: bold;
+    width: 100%;
   }
 
   .btn.plus { background: #4CAF50; color: #fff; }
@@ -125,7 +125,6 @@
 let exchangeRate = 0;
 let totalVnd = 0;
 let displayTerms = [];
-let showingTotal = false;
 
 const input = document.getElementById("vndInput");
 const result = document.getElementById("result");
@@ -198,7 +197,6 @@ input.addEventListener("input", e => {
   }
 
   input.value = Number(raw).toLocaleString();
-  showingTotal = false;
   updateKRW(Number(raw));
 });
 
@@ -213,7 +211,6 @@ plusBtn.addEventListener("click", e => {
   expression.innerText = displayTerms.join(" + ");
 
   input.value = "";
-  showingTotal = true;
   updateKRW(totalVnd);
   input.focus();
 });
@@ -225,7 +222,6 @@ clearBtn.addEventListener("click", e => {
   displayTerms = [];
   expression.innerText = "";
   input.value = "";
-  showingTotal = false;
   updateKRW(0);
   input.focus();
 });
@@ -237,7 +233,6 @@ card.addEventListener("click", () => {
 
   const multiplied = raw * 1000;
   input.value = multiplied.toLocaleString();
-  showingTotal = false;
   updateKRW(multiplied);
   input.focus();
 });
