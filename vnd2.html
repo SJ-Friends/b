@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>VND → KRW</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: linear-gradient(180deg, #f5f7fa, #e9eef3);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  width: 100%;
+  max-width: 420px;
+  padding: 20px 16px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 26px;
+  padding: 26px 22px 28px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+  overflow: hidden;
+}
+
+h1 {
+  margin: 0;
+  font-size: 20px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.rate {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 13px;
+  color: #999;
+}
+
+/* 🔥 입력 + 버튼 : 기존 크기 유지 */
+.input-row {
+  display: grid;
+  grid-template-columns: 6fr 4fr 4fr;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+input {
+  padding: 10px 14px;
+  font-size: 22px;
+  border-radius: 12px;
+  border: none;
+  outline: none;
+  text-align: right;
+  width: 100%;
+  background: #f4f6f8;
+}
+
+.btn {
+  height: 36px;
+  font-size: 20px;
+  border-radius: 12px;
+  border: none;
+  font-weight: bold;
+  width: 100%;
+  cursor: pointer;
+}
+
+.btn.plus {
+  background: #e6f7f1;
+  color: #17a673;
+}
+
+.btn.clear {
+  background: #fdecec;
+  color: #e74c3c;
+}
+
+.expression {
+  margin-top: 10px;
+  font-size: 14px;
+  text-align: center;
+  color: #888;
+  min-height: 22px;
+}
+
+/* 결과 */
+.result {
+  margin-top: 20px;
+  font-size: 32px;
+  text-align: center;
+  font-weight: 700;
+  color: #111;
+}
+
+.korean {
+  margin-top: 4px;
+  font-size: 14px;
+  text-align: center;
+  color: #888;
+}
+
+/* 최근 환전 내역 */
+.history-card {
+  margin-top: 24px;
+  padding: 16px;
+  border-radius: 18px;
+  background: #f7f9fb;
+}
+
+.history-title {
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #aaa;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 14px;
+}
+
+.history-item + .history-item {
+  border-top: 1px solid #eee;
+}
+
+.history-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.history-time {
+  font-size: 11px;
+  color: #999;
+}
+
+.history-vnd {
+  font-weight: 500;
+  color: #333;
+}
+
+.history-krw {
+  font-weight: 600;
+  color: #2ecc71;
+}
+
+.footer {
+  margin-top: 22px;
+  text-align: center;
+  font-size: 11px;
+  color: #bbb;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <div class="card" id="card">
+    <h1>VN VND → KR KRW</h1>
+    <div class="rate" id="rate">환율 불러오는 중...</div>
+
+    <div class="input-row">
+      <input id="vndInput" type="text" inputmode="numeric" placeholder="0" />
+      <button class="btn plus" id="plusBtn">+</button>
+      <button class="btn clear" id="clearBtn">×</button>
+    </div>
+
+    <div class="expression" id="expression"></div>
+
+    <div class="result" id="result">0원</div>
+    <div class="korean" id="korean">영원</div>
+
+    <div class="history-card">
+      <div class="history-title">RECENT ACTIVITY</div>
+      <div id="historyList"></div>
+    </div>
+
+    <div class="footer">MINIMAL CURRENCY v2.0</div>
+  </div>
+</div>
+
+<script>
+let exchangeRate = 0;
+let totalVnd = 0;
+let displayTerms = [];
+
+const input = document.getElementById("vndInput");
+const result = document.getElementById("result");
+const korean = document.getElementById("korean");
+const expression = document.getElementById("expression");
+const card = document.getElementById("card");
+const historyList = document.getElementById("historyList");
+
+let history = JSON.parse(localStorage.getItem("vndHistory") || "[]");
+
+// 환율
+async function loadRate() {
+  const res = await fetch("https://open.er-api.com/v6/latest/VND");
+  const data = await res.json();
+  exchangeRate = data.rates.KRW;
+  document.getElementById("rate").innerText =
+    `1 VND = ${exchangeRate.toFixed(4)} KRW`;
+}
+loadRate();
+
+// 숫자 → 한글
+function numberToKorean(num) {
+  if (num === 0) return "영원";
+  num = Math.floor(num / 100) * 100;
+
+  const big = ["", "만", "억", "조"];
+  const small = ["", "십", "백", "천"];
+  const n = ["영", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구"];
+
+  let out = [];
+  let i = 0;
+
+  while (num > 0) {
+    const chunk = num % 10000;
+    if (chunk) {
+      let parts = [];
+      let t = chunk;
+      for (let j = 0; j < 4; j++) {
+        const d = t % 10;
+        if (d) parts.unshift((d === 1 && j ? small[j] : n[d] + small[j]));
+        t = Math.floor(t / 10);
+      }
+      let text = parts.join(" ");
+      if (text === "일" && i > 0) text = "";
+      out.unshift((text + big[i]).trim());
+    }
+    num = Math.floor(num / 10000);
+    i++;
+  }
+  return out.join(" ") + "원";
+}
+
+// 원화 표시
+function updateKRW(vnd) {
+  if (!vnd || !exchangeRate) {
+    result.innerText = "0원";
+    korean.innerText = "영원";
+    return;
+  }
+  const won = Math.floor(vnd * exchangeRate);
+  result.innerText = `${won.toLocaleString()}원`;
+  korean.innerText = numberToKorean(won);
+}
+
+// 최근 내역 렌더
+function renderHistory() {
+  historyList.innerHTML = history.map(item => `
+    <div class="history-item">
+      <div class="history-left">
+        <div class="history-time">${item.time}</div>
+        <div class="history-vnd">${item.vnd.toLocaleString()} VND</div>
+      </div>
+      <div class="history-krw">+${item.krw.toLocaleString()}</div>
+    </div>
+  `).join("");
+}
+renderHistory();
+
+// 입력
+input.addEventListener("input", () => {
+  const raw = input.value.replace(/,/g, "");
+  if (!raw || isNaN(raw)) {
+    updateKRW(0);
+    return;
+  }
+  input.value = Number(raw).toLocaleString();
+  updateKRW(Number(raw));
+});
+
+// 누적
+plusBtn.addEventListener("click", () => {
+  const raw = Number(input.value.replace(/,/g, ""));
+  if (!raw) return;
+
+  totalVnd += raw;
+  displayTerms.push(Math.floor(raw / 1000));
+  expression.innerText = displayTerms.join(" + ");
+
+  const krw = Math.floor(raw * exchangeRate);
+  history.unshift({ time: "Just now", vnd: raw, krw });
+  history = history.slice(0, 5);
+  localStorage.setItem("vndHistory", JSON.stringify(history));
+  renderHistory();
+
+  input.value = "";
+  updateKRW(totalVnd);
+});
+
+// 초기화
+clearBtn.addEventListener("click", () => {
+  totalVnd = 0;
+  displayTerms = [];
+  expression.innerText = "";
+  input.value = "";
+  updateKRW(0);
+});
+
+// 카드 클릭 → ×1000
+card.addEventListener("click", () => {
+  const raw = Number(input.value.replace(/,/g, ""));
+  if (!raw) return;
+
+  const multiplied = raw * 1000;
+  input.value = multiplied.toLocaleString();
+  updateKRW(multiplied);
+});
+
+window.onload = () => input.focus();
+</script>
+
+</body>
+</html>
