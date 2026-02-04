@@ -49,7 +49,6 @@ h1 {
   color: #999;
 }
 
-/* 🔥 입력 + 버튼 : 기존 크기 유지 */
 .input-row {
   display: grid;
   grid-template-columns: 6fr 4fr 4fr;
@@ -69,7 +68,7 @@ input {
 }
 
 .btn {
-  height: 36px;
+  height: 46px;
   font-size: 20px;
   border-radius: 12px;
   border: none;
@@ -96,7 +95,6 @@ input {
   min-height: 22px;
 }
 
-/* 결과 */
 .result {
   margin-top: 20px;
   font-size: 32px;
@@ -112,7 +110,6 @@ input {
   color: #888;
 }
 
-/* 최근 환전 내역 */
 .history-card {
   margin-top: 24px;
   padding: 16px;
@@ -193,7 +190,7 @@ input {
       <div id="historyList"></div>
     </div>
 
-    <div class="footer">MINIMAL CURRENCY v2.0</div>
+    <div class="footer">SJ CURRENCY v2.0</div>
   </div>
 </div>
 
@@ -290,8 +287,10 @@ input.addEventListener("input", () => {
   updateKRW(Number(raw));
 });
 
-// 누적
-plusBtn.addEventListener("click", () => {
+// 누적 (+)  ✅ 키패드 유지
+plusBtn.addEventListener("click", e => {
+  e.stopPropagation();
+
   const raw = Number(input.value.replace(/,/g, ""));
   if (!raw) return;
 
@@ -307,15 +306,19 @@ plusBtn.addEventListener("click", () => {
 
   input.value = "";
   updateKRW(totalVnd);
+  input.focus();   // 🔴 핵심
 });
 
-// 초기화
-clearBtn.addEventListener("click", () => {
+// 초기화 (×) ✅ 키패드 유지
+clearBtn.addEventListener("click", e => {
+  e.stopPropagation();
+
   totalVnd = 0;
   displayTerms = [];
   expression.innerText = "";
   input.value = "";
   updateKRW(0);
+  input.focus();   // 🔴 핵심
 });
 
 // 카드 클릭 → ×1000
