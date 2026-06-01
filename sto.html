@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>투자 심리 성향 테스트</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Pretendard',sans-serif;
+}
+
+body{
+    background:#f4f7fb;
+    padding:20px;
+}
+
+.container{
+    max-width:900px;
+    margin:auto;
+}
+
+.header{
+    background:white;
+    padding:30px;
+    border-radius:20px;
+    text-align:center;
+    margin-bottom:20px;
+    box-shadow:0 4px 20px rgba(0,0,0,.08);
+}
+
+.header h1{
+    color:#222;
+    margin-bottom:10px;
+}
+
+.header p{
+    color:#666;
+    line-height:1.6;
+}
+
+.question{
+    background:white;
+    padding:25px;
+    margin-bottom:15px;
+    border-radius:20px;
+    box-shadow:0 4px 15px rgba(0,0,0,.06);
+}
+
+.question h3{
+    margin-bottom:20px;
+    color:#222;
+}
+
+.option{
+    margin-bottom:15px;
+}
+
+.option label{
+    display:block;
+    padding:15px;
+    border:2px solid #ddd;
+    border-radius:12px;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.option label:hover{
+    border-color:#4a7dff;
+    background:#f7f9ff;
+}
+
+.option input{
+    margin-right:10px;
+}
+
+button{
+    width:100%;
+    padding:18px;
+    border:none;
+    border-radius:15px;
+    background:#4a7dff;
+    color:white;
+    font-size:18px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#3968dd;
+}
+
+.result{
+    display:none;
+    margin-top:20px;
+    background:white;
+    border-radius:20px;
+    padding:30px;
+    box-shadow:0 4px 20px rgba(0,0,0,.08);
+}
+
+.score-box{
+    background:#f5f7ff;
+    padding:20px;
+    border-radius:15px;
+    margin:20px 0;
+}
+
+.score{
+    margin:10px 0;
+    font-weight:bold;
+}
+
+.type{
+    font-size:28px;
+    font-weight:bold;
+    color:#4a7dff;
+    margin:20px 0;
+}
+
+.analysis{
+    line-height:1.8;
+    color:#333;
+}
+
+.bar{
+    width:100%;
+    height:16px;
+    background:#ddd;
+    border-radius:10px;
+    overflow:hidden;
+    margin-top:5px;
+}
+
+.fill{
+    height:100%;
+    background:#4a7dff;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+    <h1>📈 투자 심리 성향 테스트</h1>
+    <p>
+        당신은 손실을 더 싫어하는 투자자일까요?<br>
+        아니면 기회를 놓치는 것을 더 싫어하는 투자자일까요?
+    </p>
+</div>
+
+<form id="testForm">
+
+<div class="question">
+<h3>1. 어떤 상황이 더 괴로운가요?</h3>
+
+<div class="option">
+<label>
+<input type="radio" name="q1" value="A">
+950만원이 되었다 (50만원 손실)
+</label>
+</div>
+
+<div class="option">
+<label>
+<input type="radio" name="q1" value="B">
+사지 않은 종목이 급등해 1,200만원이 될 기회를 놓쳤다
+</label>
+</div>
+</div>
+
+<div class="question">
+<h3>2. 어떤 상황이 더 괴로운가요?</h3>
+
+<div class="option">
+<label>
+<input type="radio" name="q2" value="A">
+매도했는데 다음날 20% 더 상승
+</label>
+</div>
+
+<div class="option">
+<label>
+<input type="radio" name="q2" value="B">
++30% 수익이 +10%로 감소
+</label>
+</div>
+</div>
+
+<div class="question">
+<h3>3. 어떤 상황이 더 스트레스인가요?</h3>
+
+<div class="option">
+<label>
+<input type="radio" name="q3" value="A">
+5,000만원 투자 후 -250만원 손실
+</label>
+</div>
+
+<div class="option">
+<label>
+<input type="radio" name="q3" value="B">
+1,000만원 수익 기회를 놓침
+</label>
+</div>
+</div>
+
+<div class="question">
+<h3>4. 더 오래 기억나는 후회는?</h3>
+
+<div class="option">
+<label>
+<input type="radio" name="q4" value="A">
+매수 후 -15% 하락
+</label>
+</div>
+
+<div class="option">
+<label>
+<input type="radio" name="q4" value="B">
+안 샀는데 +50% 폭등
+</label>
+</div>
+</div>
+
+<div class="question">
+<h3>5. 더 실패했다고 느끼는 것은?</h3>
+
+<div class="option">
+<label>
+<input type="radio" name="q5" value="A">
+1억 → 9,500만원
+</label>
+</div>
+
+<div class="option">
+<label>
+<input type="radio" name="q5" value="B">
+1억 유지했지만 시장은 +30%
+</label>
+</div>
+</div>
+
+<button type="button" onclick="analyze()">
+결과 확인하기
+</button>
+
+</form>
+
+<div id="result" class="result"></div>
+
+</div>
+
+<script>
+
+function analyze(){
+
+let answers = [];
+let loss = 0;
+let opportunity = 0;
+
+for(let i=1;i<=5;i++){
+
+let selected =
+document.querySelector(`input[name=q${i}]:checked`);
+
+if(!selected){
+alert(i+"번 문항을 선택해주세요.");
+return;
+}
+
+answers.push(selected.value);
+
+if(selected.value==="A"){
+loss++;
+}else{
+opportunity++;
+}
+}
+
+let type="";
+let detail="";
+
+if(loss>=4){
+
+type="손실회피형 투자자";
+
+detail=`
+당신은 수익 기회를 놓치는 것보다
+실제 돈을 잃는 상황에 훨씬 민감합니다.
+
+수익보다 자산 보호를 중요하게 생각하며
+대형주, 배당주, 가치주 투자에 적합합니다.
+
+다만 너무 빠른 익절이나
+지나친 현금 비중 확대에 주의가 필요합니다.
+`;
+
+}
+else if(opportunity>=4){
+
+type="기회손실형 투자자";
+
+detail=`
+당신은 손실보다
+'벌 수 있었는데 못 번 돈'에
+더 큰 스트레스를 받는 편입니다.
+
+상승장에서는 좋은 성과를 낼 수 있지만
+FOMO(추격매수)에 주의해야 합니다.
+
+분할매수와 비중관리가 중요합니다.
+`;
+
+}
+else{
+
+type="균형형 투자자";
+
+detail=`
+당신은 손실과 기회손실을
+모두 중요하게 생각하는 투자자입니다.
+
+시장 상황에 따라 성향이 바뀌며
+실제 투자에서는 손실회피 성향이
+조금 더 강하게 나타날 가능성이 있습니다.
+
+집중투자 + 분할매도 전략이 잘 맞는 편입니다.
+`;
+
+}
+
+let lossScore=Math.round(loss/5*100);
+let oppScore=Math.round(opportunity/5*100);
+
+document.getElementById("result").style.display="block";
+
+document.getElementById("result").innerHTML=`
+
+<h2>테스트 결과</h2>
+
+<div class="type">${type}</div>
+
+<div class="score-box">
+
+<div class="score">
+손실회피 성향 ${lossScore}%
+<div class="bar">
+<div class="fill" style="width:${lossScore}%"></div>
+</div>
+</div>
+
+<div class="score">
+기회손실 민감도 ${oppScore}%
+<div class="bar">
+<div class="fill" style="width:${oppScore}%"></div>
+</div>
+</div>
+
+</div>
+
+<div class="analysis">
+${detail}
+<br><br>
+
+<b>추천 투자 방식</b><br>
+• 종목당 최대 비중 설정<br>
+• 분할매수 / 분할매도<br>
+• 감정보다 규칙 우선<br>
+• 수익률보다 리스크 관리 중시
+</div>
+
+`;
+
+window.scrollTo({
+top:document.body.scrollHeight,
+behavior:'smooth'
+});
+
+}
+</script>
+
+</body>
+</html>
