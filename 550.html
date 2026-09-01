@@ -66,8 +66,17 @@ button {
     margin: 3px;
     font-size: 15px;
 }
-#sizes {
+#sizes, #aligns {
     margin-top: 8px;
+}
+#clearBtn {
+    background: #555;
+    color: white;
+    border: none;
+    border-radius: 6px;
+}
+.active {
+    outline: 2px solid #2b6cff;
 }
 #fsBtn {
     background: #2b6cff;
@@ -109,7 +118,8 @@ button {
     <div>
         <input
             id="url"
-            placeholder="유튜브 주소 입력">
+            placeholder="유튜브 주소 (영상 또는 재생목록)">
+        <button id="clearBtn" onclick="clearUrl()">지우기</button>
         <button onclick="playVideo()">재생</button>
         <button id="fsBtn" onclick="enterFullscreen()">전체화면</button>
     </div>
@@ -121,6 +131,12 @@ button {
         <button onclick="setSize(0.4)">40%</button>
         <button onclick="setSize(0.3)">30%</button>
     </div>
+    <div id="aligns">
+        위치:
+        <button id="alignLeftBtn" onclick="setAlign('left')">좌측</button>
+        <button id="alignCenterBtn" onclick="setAlign('center')">중앙</button>
+        <button id="alignRightBtn" onclick="setAlign('right')">우측</button>
+    </div>
     <div style="margin-top:6px; font-size:12px; opacity:0.7;">
         컨트롤 패널 숨기기 → 화면 아무 곳이나 길게(2초) 터치
     </div>
@@ -128,40 +144,93 @@ button {
 <button id="toggleTab" onclick="showControl()">☰</button>
 
 <script>
-function getVideoId(url) {
+// videoId, listId를 함께 뽑아냄 (둘 중 하나만 있어도 동작)
+function parseYoutube(url) {
     try {
         let u = new URL(url);
+        let videoId = null;
+        let listId = u.searchParams.get("list"); // 재생목록 id (있으면 공통으로 추출)
+
         // youtu.be/xxxx
         if (u.hostname.includes("youtu.be")) {
-            return u.pathname.substring(1);
+            videoId = u.pathname.substring(1);
         }
-        // youtube.com/watch?v=xxxx
-        if (u.hostname.includes("youtube.com")) {
-            return u.searchParams.get("v");
+        // youtube.com/watch?v=xxxx  또는  youtube.com/playlist?list=xxxx
+        else if (u.hostname.includes("youtube.com")) {
+            videoId = u.searchParams.get("v");
         }
+        return { videoId, listId };
     } catch(e) {}
-    return null;
+    return { videoId: null, listId: null };
 }
 
 function playVideo() {
     const url = document.getElementById("url").value;
-    const id = getVideoId(url);
-    if (!id) {
+    const { videoId, listId } = parseYoutube(url);
+
+    if (!videoId && !listId) {
         alert("유튜브 주소를 확인해주세요.");
         return;
     }
-    document.getElementById("youtube").src =
-        "https://www.youtube.com/embed/" +
-        id +
-        "?autoplay=1&rel=0";
+
+    let src;
+    if (videoId && listId) {
+        // 특정 영상부터 시작해서 같은 재생목록을 이어서 재생
+        src = "https://www.youtube.com/embed/" + videoId +
+              "?list=" + listId + "&autoplay=1&rel=0";
+    } else if (listId) {
+        // 재생목록 주소만 입력한 경우 (youtube.com/playlist?list=...)
+        src = "https://www.youtube.com/embed/videoseries" +
+              "?list=" + listId + "&autoplay=1&rel=0";
+    } else {
+        // 영상 하나만 재생
+        src = "https://www.youtube.com/embed/" + videoId +
+              "?autoplay=1&rel=0";
+    }
+
+    document.getElementById("youtube").src = src;
     // 재생 버튼 클릭은 사용자 제스처이므로 여기서도 전체화면 시도
     enterFullscreen();
+}
+
+function clearUrl() {
+    const input = document.getElementById("url");
+    input.value = "";
+    input.focus();
 }
 
 function setSize(ratio) {
     const video = document.getElementById("videoBox");
     video.style.width = (ratio * 100) + "vw";
 }
+
+// ---- 화면 정렬 (좌 / 중앙 / 우) ----
+function setAlign(pos) {
+    const video = document.getElementById("videoBox");
+    video.style.left = "";
+    video.style.right = "";
+    video.style.transform = "";
+
+    if (pos === "left") {
+        video.style.left = "0";
+    } else if (pos === "right") {
+        video.style.right = "0";
+    } else {
+        video.style.left = "50%";
+        video.style.transform = "translateX(-50%)";
+    }
+
+    document.getElementById("alignLeftBtn").classList.remove("active");
+    document.getElementById("alignCenterBtn").classList.remove("active");
+    document.getElementById("alignRightBtn").classList.remove("active");
+    document.getElementById("align" + pos.charAt(0).toUpperCase() + pos.slice(1) + "Btn")
+        .classList.add("active");
+}
+
+// 초기 상태: 중앙 정렬 활성 표시
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("alignCenterBtn").classList.add("active");
+});
 
 // ---- 전체화면(주소창/상태바 숨김) ----
 function enterFullscreen() {
