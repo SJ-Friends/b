@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>PH550 YouTube Player</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    overflow: hidden;
+}
+
+#screen {
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    position: relative;
+}
+
+/* 유튜브 영상 */
+#videoBox {
+    position: absolute;
+    width: 50vw;
+    aspect-ratio: 16 / 9;
+
+    left: 50%;
+    top: 0;
+
+    transform: translateX(-50%);
+
+    background: #000;
+}
+
+#youtube {
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+/* 조작 패널 */
+#control {
+    position: fixed;
+    left: 10px;
+    bottom: 10px;
+
+    padding: 12px;
+
+    background: rgba(40,40,40,0.9);
+    border-radius: 10px;
+
+    color: white;
+    font-family: Arial, sans-serif;
+
+    z-index: 100;
+}
+
+input {
+    width: 280px;
+    padding: 8px;
+    font-size: 16px;
+}
+
+button {
+    padding: 8px 12px;
+    margin: 3px;
+    font-size: 15px;
+}
+
+#sizes {
+    margin-top: 8px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="screen">
+
+    <div id="videoBox">
+        <iframe
+            id="youtube"
+            src=""
+            allow="autoplay; encrypted-media; fullscreen"
+            allowfullscreen>
+        </iframe>
+    </div>
+
+</div>
+
+<div id="control">
+
+    <div>
+        <input
+            id="url"
+            placeholder="유튜브 주소 입력">
+        <button onclick="playVideo()">재생</button>
+    </div>
+
+    <div id="sizes">
+        크기:
+        <button onclick="setSize(1)">100%</button>
+        <button onclick="setSize(0.75)">75%</button>
+        <button onclick="setSize(0.5)">50%</button>
+        <button onclick="setSize(0.4)">40%</button>
+        <button onclick="setSize(0.3)">30%</button>
+    </div>
+
+</div>
+
+<script>
+
+function getVideoId(url) {
+
+    try {
+
+        let u = new URL(url);
+
+        // youtu.be/xxxx
+        if (u.hostname.includes("youtu.be")) {
+            return u.pathname.substring(1);
+        }
+
+        // youtube.com/watch?v=xxxx
+        if (u.hostname.includes("youtube.com")) {
+            return u.searchParams.get("v");
+        }
+
+    } catch(e) {}
+
+    return null;
+}
+
+
+function playVideo() {
+
+    const url = document.getElementById("url").value;
+
+    const id = getVideoId(url);
+
+    if (!id) {
+        alert("유튜브 주소를 확인해주세요.");
+        return;
+    }
+
+    document.getElementById("youtube").src =
+        "https://www.youtube.com/embed/" +
+        id +
+        "?autoplay=1&rel=0";
+
+}
+
+
+function setSize(ratio) {
+
+    const video = document.getElementById("videoBox");
+
+    video.style.width = (ratio * 100) + "vw";
+
+}
+
+</script>
+
+</body>
+</html>
