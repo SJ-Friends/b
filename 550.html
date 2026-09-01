@@ -2,15 +2,15 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <title>PH550 YouTube Player</title>
-
 <style>
 * {
     box-sizing: border-box;
 }
-
 html, body {
     margin: 0;
     width: 100%;
@@ -18,73 +18,84 @@ html, body {
     background: #000;
     overflow: hidden;
 }
-
 #screen {
     width: 100vw;
     height: 100vh;
     background: #000;
     position: relative;
 }
-
 /* 유튜브 영상 */
 #videoBox {
     position: absolute;
     width: 50vw;
     aspect-ratio: 16 / 9;
-
     left: 50%;
     top: 0;
-
     transform: translateX(-50%);
-
     background: #000;
 }
-
 #youtube {
     width: 100%;
     height: 100%;
     border: 0;
 }
-
 /* 조작 패널 */
 #control {
     position: fixed;
     left: 10px;
     bottom: 10px;
-
     padding: 12px;
-
     background: rgba(40,40,40,0.9);
     border-radius: 10px;
-
     color: white;
     font-family: Arial, sans-serif;
-
     z-index: 100;
+    transition: opacity 0.3s ease;
 }
-
+#control.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
 input {
     width: 280px;
     padding: 8px;
     font-size: 16px;
 }
-
 button {
     padding: 8px 12px;
     margin: 3px;
     font-size: 15px;
 }
-
 #sizes {
     margin-top: 8px;
 }
+#fsBtn {
+    background: #2b6cff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+}
+#toggleTab {
+    position: fixed;
+    left: 10px;
+    bottom: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(40,40,40,0.6);
+    color: white;
+    border: none;
+    font-size: 18px;
+    z-index: 101;
+    display: none;
+}
+#toggleTab.show {
+    display: block;
+}
 </style>
 </head>
-
 <body>
-
 <div id="screen">
-
     <div id="videoBox">
         <iframe
             id="youtube"
@@ -93,18 +104,15 @@ button {
             allowfullscreen>
         </iframe>
     </div>
-
 </div>
-
 <div id="control">
-
     <div>
         <input
             id="url"
             placeholder="유튜브 주소 입력">
         <button onclick="playVideo()">재생</button>
+        <button id="fsBtn" onclick="enterFullscreen()">전체화면</button>
     </div>
-
     <div id="sizes">
         크기:
         <button onclick="setSize(1)">100%</button>
@@ -113,61 +121,89 @@ button {
         <button onclick="setSize(0.4)">40%</button>
         <button onclick="setSize(0.3)">30%</button>
     </div>
-
+    <div style="margin-top:6px; font-size:12px; opacity:0.7;">
+        컨트롤 패널 숨기기 → 화면 아무 곳이나 길게(2초) 터치
+    </div>
 </div>
+<button id="toggleTab" onclick="showControl()">☰</button>
 
 <script>
-
 function getVideoId(url) {
-
     try {
-
         let u = new URL(url);
-
         // youtu.be/xxxx
         if (u.hostname.includes("youtu.be")) {
             return u.pathname.substring(1);
         }
-
         // youtube.com/watch?v=xxxx
         if (u.hostname.includes("youtube.com")) {
             return u.searchParams.get("v");
         }
-
     } catch(e) {}
-
     return null;
 }
 
-
 function playVideo() {
-
     const url = document.getElementById("url").value;
-
     const id = getVideoId(url);
-
     if (!id) {
         alert("유튜브 주소를 확인해주세요.");
         return;
     }
-
     document.getElementById("youtube").src =
         "https://www.youtube.com/embed/" +
         id +
         "?autoplay=1&rel=0";
-
+    // 재생 버튼 클릭은 사용자 제스처이므로 여기서도 전체화면 시도
+    enterFullscreen();
 }
-
 
 function setSize(ratio) {
-
     const video = document.getElementById("videoBox");
-
     video.style.width = (ratio * 100) + "vw";
-
 }
 
-</script>
+// ---- 전체화면(주소창/상태바 숨김) ----
+function enterFullscreen() {
+    const el = document.documentElement;
+    const req = el.requestFullscreen
+        || el.webkitRequestFullscreen   // iOS Safari / 구형 웹킷
+        || el.msRequestFullscreen;      // 구형 엣지
+    if (req) {
+        req.call(el).catch(() => {
+            // 일부 iOS Safari는 전체화면 API 자체를 지원하지 않음
+            // → "홈 화면에 추가" 후 실행하면 주소창/상태바 없이 열림
+        });
+    }
+    // 화면 꺼짐 방지 (지원 브라우저에 한함)
+    if (navigator.wakeLock) {
+        navigator.wakeLock.request("screen").catch(() => {});
+    }
+}
 
+// ---- 컨트롤 패널 숨기기/보이기 (화면 길게 누르면 숨김) ----
+let pressTimer = null;
+document.getElementById("screen").addEventListener("touchstart", () => {
+    pressTimer = setTimeout(hideControl, 2000);
+});
+document.getElementById("screen").addEventListener("touchend", () => {
+    clearTimeout(pressTimer);
+});
+document.getElementById("screen").addEventListener("mousedown", () => {
+    pressTimer = setTimeout(hideControl, 2000);
+});
+document.getElementById("screen").addEventListener("mouseup", () => {
+    clearTimeout(pressTimer);
+});
+
+function hideControl() {
+    document.getElementById("control").classList.add("hidden");
+    document.getElementById("toggleTab").classList.add("show");
+}
+function showControl() {
+    document.getElementById("control").classList.remove("hidden");
+    document.getElementById("toggleTab").classList.remove("show");
+}
+</script>
 </body>
 </html>
