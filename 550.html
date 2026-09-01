@@ -8,9 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <title>PH550 YouTube Player</title>
 <style>
-* {
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 html, body {
     margin: 0;
     width: 100%;
@@ -24,173 +22,302 @@ html, body {
     background: #000;
     position: relative;
 }
-/* 유튜브 영상 */
 #videoBox {
     position: absolute;
     width: 50vw;
     aspect-ratio: 16 / 9;
-    left: 50%;
-    top: 0;
-    transform: translateX(-50%);
     background: #000;
 }
-#youtube {
+#videoBox iframe {
     width: 100%;
     height: 100%;
     border: 0;
 }
-/* 조작 패널 */
 #control {
     position: fixed;
     left: 10px;
     bottom: 10px;
+    max-width: 320px;
+    max-height: 85vh;
+    overflow-y: auto;
     padding: 12px;
-    background: rgba(40,40,40,0.9);
+    background: rgba(40,40,40,0.92);
     border-radius: 10px;
     color: white;
     font-family: Arial, sans-serif;
     z-index: 100;
-    transition: opacity 0.3s ease;
 }
-#control.hidden {
-    opacity: 0;
-    pointer-events: none;
-}
+#control.hidden { display: none; }
 input {
-    width: 280px;
+    width: 190px;
     padding: 8px;
-    font-size: 16px;
-}
-button {
-    padding: 8px 12px;
-    margin: 3px;
     font-size: 15px;
 }
-#sizes, #aligns {
-    margin-top: 8px;
-}
-#clearBtn {
-    background: #555;
-    color: white;
-    border: none;
+button {
+    padding: 8px 10px;
+    margin: 3px;
+    font-size: 14px;
     border-radius: 6px;
-}
-.active {
-    outline: 2px solid #2b6cff;
-}
-#fsBtn {
-    background: #2b6cff;
+    border: 1px solid #666;
+    background: #333;
     color: white;
-    border: none;
-    border-radius: 6px;
 }
+button:active { background: #555; }
+.row { margin-top: 8px; }
+.label { font-size: 12px; opacity: 0.75; margin-bottom: 2px; }
+#fsBtn { background: #2b6cff; border-color: #2b6cff; }
+#clearBtn { background: #555; }
+#hideBtn { background: #a33; border-color: #a33; }
+.active { outline: 2px solid #2b6cff; }
+#arrowPad {
+    display: grid;
+    grid-template-columns: 40px 40px 40px;
+    grid-template-rows: 36px 36px 36px;
+    gap: 3px;
+    width: fit-content;
+}
+#arrowPad button { margin: 0; padding: 0; font-size: 16px; }
+.arrow-up   { grid-column: 2; grid-row: 1; }
+.arrow-left { grid-column: 1; grid-row: 2; }
+.arrow-right{ grid-column: 3; grid-row: 2; }
+.arrow-down { grid-column: 2; grid-row: 3; }
+
+.listPanel {
+    max-height: 180px;
+    overflow-y: auto;
+    background: rgba(0,0,0,0.3);
+    border-radius: 6px;
+    padding: 4px;
+    margin-top: 4px;
+}
+.listItem {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+.listItem:hover, .listItem.playing { background: rgba(43,108,255,0.35); }
+.listItem img { width: 48px; height: 27px; object-fit: cover; border-radius: 3px; flex-shrink: 0; }
+.listItem .t { flex: 1; line-height: 1.2; word-break: break-all; }
+
 #toggleTab {
     position: fixed;
     left: 10px;
     bottom: 10px;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
-    background: rgba(40,40,40,0.6);
+    background: rgba(40,40,40,0.7);
     color: white;
     border: none;
     font-size: 18px;
     z-index: 101;
     display: none;
 }
-#toggleTab.show {
-    display: block;
-}
+#toggleTab.show { display: block; }
 </style>
 </head>
 <body>
 <div id="screen">
     <div id="videoBox">
-        <iframe
-            id="youtube"
-            src=""
-            allow="autoplay; encrypted-media; fullscreen"
-            allowfullscreen>
-        </iframe>
+        <div id="player"></div>
     </div>
 </div>
+
 <div id="control">
-    <div>
-        <input
-            id="url"
-            placeholder="유튜브 주소 (영상 또는 재생목록)">
+    <div class="row">
+        <input id="url" placeholder="유튜브 주소 (영상 또는 재생목록)">
         <button id="clearBtn" onclick="clearUrl()">지우기</button>
+    </div>
+    <div class="row">
         <button onclick="playVideo()">재생</button>
         <button id="fsBtn" onclick="enterFullscreen()">전체화면</button>
+        <button id="hideBtn" onclick="hideControl()">패널 숨기기</button>
     </div>
-    <div id="sizes">
-        크기:
+
+    <div class="row">
+        <div class="label">크기</div>
         <button onclick="setSize(1)">100%</button>
         <button onclick="setSize(0.75)">75%</button>
         <button onclick="setSize(0.5)">50%</button>
         <button onclick="setSize(0.4)">40%</button>
         <button onclick="setSize(0.3)">30%</button>
     </div>
-    <div id="aligns">
-        위치:
-        <button id="alignLeftBtn" onclick="setAlign('left')">좌측</button>
-        <button id="alignCenterBtn" onclick="setAlign('center')">중앙</button>
-        <button id="alignRightBtn" onclick="setAlign('right')">우측</button>
+
+    <div class="row">
+        <div class="label">위치 이동</div>
+        <div id="arrowPad">
+            <button class="arrow-up" onclick="moveVideo('up')">▲</button>
+            <button class="arrow-left" onclick="moveVideo('left')">◀</button>
+            <button class="arrow-right" onclick="moveVideo('right')">▶</button>
+            <button class="arrow-down" onclick="moveVideo('down')">▼</button>
+        </div>
     </div>
-    <div style="margin-top:6px; font-size:12px; opacity:0.7;">
-        컨트롤 패널 숨기기 → 화면 아무 곳이나 길게(2초) 터치
+
+    <div class="row">
+        <div class="label">재생목록 이동</div>
+        <button onclick="prevVideo()">◀ 이전영상</button>
+        <button onclick="nextVideo()">다음영상 ▶</button>
+    </div>
+
+    <div class="row">
+        <div class="label">현재 재생목록</div>
+        <div id="playlistPanel" class="listPanel">
+            <div class="listItem"><div class="t">재생목록을 재생하면 여기에 표시됩니다.</div></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="label">최근 재생</div>
+        <div id="recentPanel" class="listPanel">
+            <div class="listItem"><div class="t">아직 기록이 없습니다.</div></div>
+        </div>
     </div>
 </div>
 <button id="toggleTab" onclick="showControl()">☰</button>
 
 <script>
-// videoId, listId를 함께 뽑아냄 (둘 중 하나만 있어도 동작)
+// ---------------- 위치(좌우상하) 기억 ----------------
+const videoBox = document.getElementById("videoBox");
+const MOVE_STEP = 3; // vw/vh 단위
+let posLeftVW, posTopVH;
+
+function loadPosition() {
+    const saved = JSON.parse(localStorage.getItem("ph550_position") || "null");
+    if (saved) {
+        posLeftVW = saved.left;
+        posTopVH = saved.top;
+    } else {
+        posLeftVW = 25; // 기본: 50vw 폭 기준 중앙
+        posTopVH = 0;
+    }
+    applyPosition();
+}
+function savePosition() {
+    localStorage.setItem("ph550_position", JSON.stringify({ left: posLeftVW, top: posTopVH }));
+}
+function applyPosition() {
+    videoBox.style.left = posLeftVW + "vw";
+    videoBox.style.top = posTopVH + "vh";
+}
+function clampPosition() {
+    const rect = videoBox.getBoundingClientRect();
+    const sw = window.innerWidth, sh = window.innerHeight;
+    if (rect.left < 0) posLeftVW -= (rect.left / sw * 100);
+    if (rect.right > sw) posLeftVW -= ((rect.right - sw) / sw * 100);
+    if (rect.top < 0) posTopVH -= (rect.top / sh * 100);
+    if (rect.bottom > sh) posTopVH -= ((rect.bottom - sh) / sh * 100);
+    applyPosition();
+}
+function moveVideo(dir) {
+    if (dir === "left") posLeftVW -= MOVE_STEP;
+    if (dir === "right") posLeftVW += MOVE_STEP;
+    if (dir === "up") posTopVH -= MOVE_STEP;
+    if (dir === "down") posTopVH += MOVE_STEP;
+    applyPosition();
+    clampPosition();
+    savePosition();
+}
+function setSize(ratio) {
+    videoBox.style.width = (ratio * 100) + "vw";
+    clampPosition();
+    savePosition();
+}
+
+// ---------------- 유튜브 주소 파싱 ----------------
 function parseYoutube(url) {
     try {
         let u = new URL(url);
         let videoId = null;
-        let listId = u.searchParams.get("list"); // 재생목록 id (있으면 공통으로 추출)
-
-        // youtu.be/xxxx
+        let listId = u.searchParams.get("list");
         if (u.hostname.includes("youtu.be")) {
             videoId = u.pathname.substring(1);
-        }
-        // youtube.com/watch?v=xxxx  또는  youtube.com/playlist?list=xxxx
-        else if (u.hostname.includes("youtube.com")) {
+        } else if (u.hostname.includes("youtube.com")) {
             videoId = u.searchParams.get("v");
         }
         return { videoId, listId };
-    } catch(e) {}
+    } catch (e) {}
     return { videoId: null, listId: null };
 }
 
-function playVideo() {
-    const url = document.getElementById("url").value;
-    const { videoId, listId } = parseYoutube(url);
+// ---------------- YouTube IFrame API ----------------
+let player;
+let playerReady = false;
+let pendingPlay = null;
+let currentPlaylistIds = [];
 
+const tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+document.head.appendChild(tag);
+
+function onYouTubeIframeAPIReady() {
+    player = new YT.Player('player', {
+        height: '100%',
+        width: '100%',
+        playerVars: { autoplay: 1, rel: 0 },
+        events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerStateChange
+        }
+    });
+}
+
+function onPlayerReady() {
+    playerReady = true;
+    if (pendingPlay) {
+        runPlay(pendingPlay.videoId, pendingPlay.listId);
+        pendingPlay = null;
+    }
+}
+
+function onPlayerStateChange(e) {
+    if (e.data === YT.PlayerState.PLAYING) {
+        refreshPlaylistPanel();
+    }
+}
+
+function playVideo() {
+    const url = document.getElementById("url").value.trim();
+    const { videoId, listId } = parseYoutube(url);
     if (!videoId && !listId) {
         alert("유튜브 주소를 확인해주세요.");
         return;
     }
-
-    let src;
-    if (videoId && listId) {
-        // 특정 영상부터 시작해서 같은 재생목록을 이어서 재생
-        src = "https://www.youtube.com/embed/" + videoId +
-              "?list=" + listId + "&autoplay=1&rel=0";
-    } else if (listId) {
-        // 재생목록 주소만 입력한 경우 (youtube.com/playlist?list=...)
-        src = "https://www.youtube.com/embed/videoseries" +
-              "?list=" + listId + "&autoplay=1&rel=0";
+    addToRecent(url, videoId, listId);
+    if (!playerReady) {
+        pendingPlay = { videoId, listId };
     } else {
-        // 영상 하나만 재생
-        src = "https://www.youtube.com/embed/" + videoId +
-              "?autoplay=1&rel=0";
+        runPlay(videoId, listId);
     }
-
-    document.getElementById("youtube").src = src;
-    // 재생 버튼 클릭은 사용자 제스처이므로 여기서도 전체화면 시도
     enterFullscreen();
+}
+
+function runPlay(videoId, listId) {
+    if (videoId && listId) {
+        player.loadPlaylist({ list: listId, listType: 'playlist', index: 0 });
+        // 재생목록 로드 후, 지정된 영상의 위치를 찾아 그 영상부터 재생
+        setTimeout(() => {
+            const ids = player.getPlaylist() || [];
+            const idx = ids.indexOf(videoId);
+            if (idx >= 0) player.playVideoAt(idx);
+        }, 1200);
+    } else if (listId) {
+        player.loadPlaylist({ list: listId, listType: 'playlist', index: 0 });
+    } else {
+        player.loadVideoById(videoId);
+        currentPlaylistIds = [];
+        renderPlaylistPanel([]);
+    }
+}
+
+function nextVideo() {
+    try { player.nextVideo(); } catch (e) { alert("재생목록이 없습니다."); }
+}
+function prevVideo() {
+    try { player.previousVideo(); } catch (e) { alert("재생목록이 없습니다."); }
 }
 
 function clearUrl() {
@@ -199,72 +326,19 @@ function clearUrl() {
     input.focus();
 }
 
-function setSize(ratio) {
-    const video = document.getElementById("videoBox");
-    video.style.width = (ratio * 100) + "vw";
-}
-
-// ---- 화면 정렬 (좌 / 중앙 / 우) ----
-function setAlign(pos) {
-    const video = document.getElementById("videoBox");
-    video.style.left = "";
-    video.style.right = "";
-    video.style.transform = "";
-
-    if (pos === "left") {
-        video.style.left = "0";
-    } else if (pos === "right") {
-        video.style.right = "0";
-    } else {
-        video.style.left = "50%";
-        video.style.transform = "translateX(-50%)";
-    }
-
-    document.getElementById("alignLeftBtn").classList.remove("active");
-    document.getElementById("alignCenterBtn").classList.remove("active");
-    document.getElementById("alignRightBtn").classList.remove("active");
-    document.getElementById("align" + pos.charAt(0).toUpperCase() + pos.slice(1) + "Btn")
-        .classList.add("active");
-}
-
-// 초기 상태: 중앙 정렬 활성 표시
-document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("alignCenterBtn").classList.add("active");
-});
-
-// ---- 전체화면(주소창/상태바 숨김) ----
+// ---------------- 전체화면 ----------------
 function enterFullscreen() {
     const el = document.documentElement;
-    const req = el.requestFullscreen
-        || el.webkitRequestFullscreen   // iOS Safari / 구형 웹킷
-        || el.msRequestFullscreen;      // 구형 엣지
+    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
     if (req) {
-        req.call(el).catch(() => {
-            // 일부 iOS Safari는 전체화면 API 자체를 지원하지 않음
-            // → "홈 화면에 추가" 후 실행하면 주소창/상태바 없이 열림
-        });
+        req.call(el).catch(() => {});
     }
-    // 화면 꺼짐 방지 (지원 브라우저에 한함)
     if (navigator.wakeLock) {
         navigator.wakeLock.request("screen").catch(() => {});
     }
 }
 
-// ---- 컨트롤 패널 숨기기/보이기 (화면 길게 누르면 숨김) ----
-let pressTimer = null;
-document.getElementById("screen").addEventListener("touchstart", () => {
-    pressTimer = setTimeout(hideControl, 2000);
-});
-document.getElementById("screen").addEventListener("touchend", () => {
-    clearTimeout(pressTimer);
-});
-document.getElementById("screen").addEventListener("mousedown", () => {
-    pressTimer = setTimeout(hideControl, 2000);
-});
-document.getElementById("screen").addEventListener("mouseup", () => {
-    clearTimeout(pressTimer);
-});
-
+// ---------------- 패널 숨기기/보이기 ----------------
 function hideControl() {
     document.getElementById("control").classList.add("hidden");
     document.getElementById("toggleTab").classList.add("show");
@@ -273,6 +347,115 @@ function showControl() {
     document.getElementById("control").classList.remove("hidden");
     document.getElementById("toggleTab").classList.remove("show");
 }
+
+// ---------------- 현재 재생목록 패널 ----------------
+function refreshPlaylistPanel() {
+    if (!player || !player.getPlaylist) return;
+    const ids = player.getPlaylist() || [];
+    if (ids.length === 0) return;
+    if (ids.join(",") !== currentPlaylistIds.join(",")) {
+        currentPlaylistIds = ids;
+        renderPlaylistPanel(ids);
+    } else {
+        highlightCurrentItem();
+    }
+}
+
+function renderPlaylistPanel(ids) {
+    const panel = document.getElementById("playlistPanel");
+    if (!ids || ids.length === 0) {
+        panel.innerHTML = '<div class="listItem"><div class="t">재생목록을 재생하면 여기에 표시됩니다.</div></div>';
+        return;
+    }
+    panel.innerHTML = ids.map((id, i) =>
+        `<div class="listItem" id="pl-item-${i}" onclick="player.playVideoAt(${i})">
+            <img src="https://img.youtube.com/vi/${id}/default.jpg">
+            <div class="t" id="pl-title-${i}">영상 ${i + 1}</div>
+        </div>`
+    ).join("");
+    highlightCurrentItem();
+    ids.forEach((id, i) => fetchTitle(id, i));
+}
+
+function highlightCurrentItem() {
+    if (!player || !player.getPlaylistIndex) return;
+    const idx = player.getPlaylistIndex();
+    document.querySelectorAll(".listItem.playing").forEach(el => el.classList.remove("playing"));
+    const el = document.getElementById("pl-item-" + idx);
+    if (el) el.classList.add("playing");
+}
+
+function fetchTitle(id, i) {
+    fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (data && data.title) {
+                const t = document.getElementById("pl-title-" + i);
+                if (t) t.textContent = data.title;
+            }
+        })
+        .catch(() => {});
+}
+
+// ---------------- 최근 재생 목록 ----------------
+function getRecent() {
+    return JSON.parse(localStorage.getItem("ph550_recent") || "[]");
+}
+function saveRecent(list) {
+    localStorage.setItem("ph550_recent", JSON.stringify(list));
+}
+function addToRecent(url, videoId, listId) {
+    let list = getRecent().filter(item => item.url !== url);
+    const entry = { url, videoId, listId, title: null };
+    list.unshift(entry);
+    list = list.slice(0, 8);
+    saveRecent(list);
+    renderRecentList();
+    // 제목 비동기 조회 (영상 id 기준으로 대표 썸네일/제목 사용)
+    const idForTitle = videoId || null;
+    if (idForTitle) {
+        fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${idForTitle}&format=json`)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (data && data.title) {
+                    let l = getRecent();
+                    const found = l.find(x => x.url === url);
+                    if (found) {
+                        found.title = data.title;
+                        saveRecent(l);
+                        renderRecentList();
+                    }
+                }
+            }).catch(() => {});
+    }
+}
+function renderRecentList() {
+    const panel = document.getElementById("recentPanel");
+    const list = getRecent();
+    if (list.length === 0) {
+        panel.innerHTML = '<div class="listItem"><div class="t">아직 기록이 없습니다.</div></div>';
+        return;
+    }
+    panel.innerHTML = list.map((item, i) => {
+        const thumbId = item.videoId || null;
+        const img = thumbId ? `<img src="https://img.youtube.com/vi/${thumbId}/default.jpg">` : "";
+        const label = item.title || (item.listId ? "재생목록" : (item.videoId || "영상"));
+        return `<div class="listItem" onclick="playFromRecent(${i})">${img}<div class="t">${label}</div></div>`;
+    }).join("");
+}
+function playFromRecent(i) {
+    const list = getRecent();
+    const item = list[i];
+    if (!item) return;
+    document.getElementById("url").value = item.url;
+    playVideo();
+}
+
+// ---------------- 초기화 ----------------
+document.addEventListener("DOMContentLoaded", () => {
+    loadPosition();
+    renderRecentList();
+});
 </script>
 </body>
 </html>
